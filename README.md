@@ -31,6 +31,8 @@ node --test
 2. V repozitáři otevři *Settings → Pages* a jako *Source* zvol **GitHub Actions**.
 3. Každý push do `main` spustí [workflow](.github/workflows/pages.yml): nejdřív testy, pak nasazení.
 
+Při nasazení workflow přidá k CSS, JS, faviconě a logu v HTML razítko `?v=<SHA commitu>`. GitHub Pages posílá soubory s `max-age=600`, takže by si návštěvník po nasazení jinak mohl načíst nové HTML se starým CSS. Ve zdrojových souborech razítko není, lokálně se nic nemění.
+
 ## Jak je tvar postavený
 
 Geometrie je v [`shape.js`](shape.js) (čistá funkce bez DOM).
