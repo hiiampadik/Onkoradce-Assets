@@ -1,16 +1,23 @@
-# Shape Generator
+# Onkorádce Assets
 
-Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Kliknutím na tvar se SVG zkopíruje do schránky, tlačítkem se stáhne jako soubor.
+Statický web s logem a navigací se dvěma záložkami. Bez závislostí a bez buildu – čisté HTML, CSS a JavaScript.
 
-Bez závislostí a bez buildu – čisté HTML, CSS a JavaScript.
+| Záložka | Cesta | Co to je |
+|---|---|---|
+| Generátor tvarů | `/` ([`index.html`](index.html)) | Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Kliknutím na tvar se SVG zkopíruje do schránky, tlačítkem se stáhne jako soubor. |
+| Animace | `/animace/` ([`animace/`](animace/)) | Knihovna `<leaf-anim>` a ukázka animací lístečku, popis je v [`animace/README.md`](animace/README.md). |
+
+Logo je v [`assets/Logo.svg`](assets/Logo.svg). Hlavička a navigace jsou na obou stránkách stejné, styl je ve [`site.css`](site.css). Novou záložku přidáš tak, že vytvoříš podsložku s `index.html`, zkopíruješ do ní hlavičku a doplníš odkaz do navigace na všech stránkách.
 
 ## Spuštění
 
-Stačí otevřít `index.html`, nebo spustit jakýkoli statický server:
+Generátor tvarů stačí otevřít z `index.html`. Animace potřebují server (prohlížeč z disku nenačte moduly), proto spusť v kořeni projektu jakýkoli statický server:
 
 ```bash
 python3 -m http.server 8765
 ```
+
+a otevři `http://localhost:8765/`.
 
 ## Testy geometrie
 

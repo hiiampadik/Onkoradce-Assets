@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animace · Onkorádce</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="stylesheet" href="../site.css">
+<style>
+  :root {
+    --bg: #f4f2ec;
+    --card: #ffffff;
+    --ink: #17231f;
+    --muted: #66706c;
+    --line: #e2dfd6;
+    --brand: #004c3a;
+    --stage: #ffffff;
+    color-scheme: light;
+  }
+  body.dark {
+    --bg: #101413;
+    --card: #181e1c;
+    --ink: #eef2f0;
+    --muted: #9aa5a1;
+    --line: #2a3330;
+    --stage: #0c100f;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .site-header { --site-max: 1180px; --site-pad-narrow: 24px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .sub b { color: var(--ink); font-weight: 600; }
+  .sub .err { color: #c0392b; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center;
+    padding: 12px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    margin-bottom: 24px; position: sticky; top: 8px; z-index: 5;
+  }
+  .toolbar .group { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: transparent; padding: 5px 10px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--brand); color: #fff; }
+  button, .file {
+    font: inherit; font-size: 13px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 5px 12px; cursor: pointer;
+  }
+  button:hover, .file:hover { border-color: var(--muted); }
+  .file input { display: none; }
+  input[type=color] { width: 32px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
+  .toolbar input[type=number], .toolbar select {
+    font: inherit; font-size: 13px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px;
+  }
+  .toolbar input[type=number] { width: 70px; }
+  .status { font-size: 12px; color: var(--muted); }
+
+  .files {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 14px; display: grid; gap: 10px;
+  }
+  .files .lead { font-size: 14px; color: var(--muted); margin: 0; }
+  .files .lead b { color: var(--ink); }
+  .files .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+  .files .row code { font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; min-width: 120px; }
+  label.check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+    display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  }
+  .card-head { display: flex; align-items: baseline; gap: 10px; }
+  .tag { font-weight: 700; font-size: 12px; color: #fff; background: var(--brand); border-radius: 6px; padding: 2px 7px; }
+  body.dark .tag { background: #2f7d68; }
+  .card h2 { font-size: 18px; margin: 0; }
+  .desc { margin: 0; color: var(--muted); font-size: 14px; }
+  .stage {
+    background: var(--stage); border: 1px solid var(--line); border-radius: 12px;
+    display: grid; place-items: center; padding: 48px 24px; overflow: hidden;
+  }
+  .host { width: 220px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+  .scrub { flex: 1; min-width: 140px; accent-color: var(--brand); }
+  details { border-top: 1px solid var(--line); padding-top: 10px; }
+  summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+  .params { display: grid; grid-template-columns: auto 1fr 64px; gap: 6px 12px; align-items: center; margin-top: 10px; font-size: 13px; }
+  .params input[type=range] { width: 100%; accent-color: var(--brand); }
+  .params output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .params .reset { grid-column: 1 / -1; justify-self: start; }
+  .params .wide { grid-column: 1 / -1; }
+  .code { position: relative; }
+  pre {
+    margin: 0; padding: 12px 14px; padding-right: 92px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+    font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-all;
+  }
+  .code button { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 3px 9px; }
+
+  section.usage { margin-top: 40px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  section.usage h2 { margin: 0 0 10px; font-size: 18px; }
+  section.usage h3 { margin: 22px 0 8px; font-size: 15px; }
+  section.usage p, section.usage li { color: var(--muted); }
+  section.usage code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+  .drop {
+    position: fixed; inset: 0; background: rgba(0, 76, 58, 0.85); color: #fff; display: none;
+    place-items: center; font-size: 22px; font-weight: 600; z-index: 10;
+  }
+  body.dragging .drop { display: grid; }
+  .banner { background: #fff3cd; color: #5c4400; border: 1px solid #f0d78c; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; }
+  .banner code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-logo" href="../" aria-label="Onkorádce – úvod"><img src="../assets/Logo.svg" alt="Onkorádce"></a>
+    <nav class="site-nav" aria-label="Hlavní navigace">
+      <a href="../">Generátor tvarů</a>
+      <a href="./" aria-current="page">Animace</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+  <h1>Lísteček — animace</h1>
+  <p class="sub" id="info">Načítám <b>Curve.svg</b>…</p>
+
+  <div class="banner" id="file-banner" hidden>
+    Stránka je otevřená přímo ze souboru, prohlížeč v tom případě nenačte moduly ani <code>Curve.svg</code>.
+    V kořenové složce projektu spusť <code>python3 -m http.server 8765</code> a otevři
+    <code>http://localhost:8765/animace/</code>.
+  </div>
+  <script>
+    if (location.protocol === 'file:') document.getElementById('file-banner').hidden = false;
+  </script>
+
+  <section class="files">
+    <p class="lead"><b>Soubory pro web.</b> Oba dej na web do jedné složky a vlož kód z karty animace (tlačítko Kopírovat pod animací).</p>
+    <div class="row"><code>leaf-anim.js</code><span class="status" id="js-info">knihovna s animacemi</span>
+      <button id="dl-js">⇩ Stáhnout</button><button id="copy-js">Kopírovat kód</button></div>
+    <div class="row"><code id="svg-name">Curve.svg</code><span class="status" id="svg-info">tvar lístečku</span>
+      <button id="dl-svg">⇩ Stáhnout</button><button id="copy-svg">Kopírovat kód</button></div>
+  </section>
+
+  <div class="toolbar">
+    <div class="group">Rychlost
+      <div class="seg" id="speed">
+        <button data-v="0.25">0,25×</button><button data-v="0.5">0,5×</button><button data-v="1" class="on">1×</button>
+      </div>
+    </div>
+    <div class="group">Pozadí
+      <div class="seg" id="bg">
+        <button data-v="light" class="on">Světlé</button><button data-v="dark">Tmavé</button>
+      </div>
+    </div>
+    <div class="group">Barva <input type="color" id="color" value="#004c3a"></div>
+    <label class="group check"><input type="checkbox" id="debug"> Ukázat rozřezání</label>
+    <label class="file">Vyzkoušet jiné SVG… <input type="file" id="file" accept=".svg,image/svg+xml"></label>
+    <div class="group" title="Velikost a plynulost exportovaných snímků (tlačítko Export u každé animace)">Export
+      <input type="number" id="ex-width" value="1080" min="64" max="4096" step="2"> px
+      <select id="ex-fps"><option>24</option><option>25</option><option>30</option><option>50</option><option selected>60</option></select> fps
+    </div>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <section class="usage">
+    <h2>Použití na webu</h2>
+    <p>Na web patří dva soubory: <code>leaf-anim.js</code> a <code>Curve.svg</code>. Stáhneš je nahoře na stránce v části „Soubory pro web“. Nic dalšího není potřeba, knihovna nemá žádné závislosti.</p>
+    <div class="code"><pre id="usage-code"></pre><button data-copy="usage-code">Kopírovat</button></div>
+    <ul>
+      <li><code>grow-pop</code> a <code>grow-squish</code> se spustí, až je prvek alespoň ze čtvrtiny vidět, a po 2 s výdrže se zase zcvrknou (vypnout jde přes <code>params='{"reverse":false}'</code>, délku výdrže mění <code>hold</code>). Pro spuštění hned po načtení přidej <code>start="load"</code>, pro ruční spuštění <code>start="manual"</code> a pak v JS <code>element.restart()</code>.</li>
+      <li><code>loader</code>, <code>pairs</code> a <code>spin</code> běží dokola; když prvek odjede z obrazovky, animace se zastaví a nežere výkon.</li>
+      <li>Velikost řídí CSS: <code>width</code> na prvku <code>leaf-anim</code>, výška se dopočítá. U varianty pop lístečky při přerostení přesahují rámeček, okolo proto nech trochu místa.</li>
+      <li>Barvu lze přepsat atributem <code>color</code>. S hodnotou <code>color="currentColor"</code> se barva řídí CSS vlastností <code>color</code>.</li>
+      <li>Uživatelům, kteří mají v systému zapnuté omezení animací, se růst rovnou ukáže v hotové podobě.</li>
+    </ul>
+
+    <h3>Export videa s průhledným pozadím</h3>
+    <p>Tlačítko <b>⇩ Export PNG</b> u každé animace stáhne ZIP s průhlednými PNG snímky s aktuálním nastavením posuvníků, barvou a velikostí a fps z horní lišty. Snímky se počítají přesně podle času, žádný nevypadne. U růstu je v ZIPu celá animace, u smyček jedna celá otočka, kterou jde přehrávat dokola bez švu. Kolem tvaru zůstane okraj, aby se vešlo přerostení i pootočení.</p>
+    <p>Snímky jdou rovnou do DaVinci Resolve nebo After Effects jako sekvence obrázků. Na video je převede <code>ffmpeg</code> (příkazy jsou i v ZIPu v souboru <code>prevod.txt</code>, s fps podle exportu):</p>
+    <div class="code"><pre id="export-code"></pre><button data-copy="export-code">Kopírovat</button></div>
+    <ul>
+      <li><b>ProRes 4444</b> (.mov) je pro střih a prezentace. Soubory jsou velké.</li>
+      <li><b>WebM</b> přehraje s průhledností Chrome, Firefox a Edge, <b>HEVC</b> Safari a iPhone. Na web patří obě verze, prohlížeč si vybere: <code>&lt;video autoplay muted loop playsinline&gt;&lt;source src="animace-safari.mov" type='video/mp4; codecs="hvc1"'&gt;&lt;source src="animace.webm" type="video/webm"&gt;&lt;/video&gt;</code>.</li>
+      <li>GIF průhlednost umí jen zapnout, nebo vypnout, okraje by byly zubaté.</li>
+    </ul>
+
+    <h3>Výměna SVG</h3>
+    <p>Stačí přepsat <code>Curve.svg</code>. Knihovna si z cesty sama najde rohy, výřezy a jednotlivé lístečky; přepočítávat ani upravovat kód není potřeba. Nový soubor si tady na stránce nejdřív vyzkoušej (tlačítko nahoře nebo přetažení do okna) a zapni <b>Ukázat rozřezání</b>: barevná pole jsou lístečky, barevné tečky jejich kotvy (od nich lísteček roste) a růžové tečky konce výřezů.</p>
+    <ul>
+      <li>Tvar musí být jedna vyplněná cesta s výřezy, které mají zaoblený (nebo rovný) konec. Mezi dvěma sousedními výřezy vznikne jeden lísteček; roste od průsečíku hran obou výřezů, takže konce výřezů zůstávají vždy stejné.</li>
+      <li>Pokud SVG obsahuje víc samostatných cest, bere se každá jako jeden lísteček.</li>
+      <li>Oblouky (příkaz <code>A</code> v cestě) podporované nejsou. Affinity je neexportuje, jinde stačí tvar převést na křivky.</li>
+    </ul>
+  </section>
+</div>
+<div class="drop">Pusť SVG soubor sem</div>
+
+<script type="module">
+// ukázka slouží k ladění: knihovnu vždy načíst čerstvou, ne z mezipaměti prohlížeče
+const { parseLeafSvg, LeafAnimation, ANIMATIONS } = await import('./leaf-anim.js?' + Date.now());
+
+const CARDS = [
+  { tag: '1A', animation: 'grow-pop', title: 'Růst – pop',
+    text: 'Na začátku je kruh (čtverec s největším zaoblením). Lístečky z něj vyrůstají, každý o kousek později, přerostou svou velikost a usadí se. Kruh se mezitím stáhne do středu. Po 2 s se celé přehraje pozpátku zpět do kruhu.' },
+  { tag: '1B', animation: 'grow-squish', title: 'Růst – zmáčknutí',
+    text: 'Lísteček doroste do neviditelného boxu a narazí. Velikost už nepřeroste, místo toho se mu na okamžik zmenší zaoblení rohů, jako by se do boxu vmáčkl. Začíná i končí výrazně zaobleným čtvercem.' },
+  { tag: '2', animation: 'loader', title: 'Načítání',
+    text: 'Lístečky rostou a zmenšují se dokola po směru hodinových ručiček. Zaoblení rohů zůstává pořád stejné. Nekonečná smyčka.' },
+  { tag: '3', animation: 'pairs', title: 'Protilehlé páry',
+    text: 'Zvětší se dva protilehlé lístečky, pak se zcvrknou a zvětší se jejich sousedé po směru hodinových ručiček. Ostatní lístečky jsou výrazně menší.' },
+  { tag: '4', animation: 'spin', title: 'Otáčení výřezů',
+    text: 'Čtverec stojí, výřezy v něm se otáčejí po směru hodinových ručiček vždy o 90° a pak chvíli stojí. Během pootočení se vodorovné a svislé výřezy náhodně posunou. Zaoblení je stálé: ústí výřezů 2X, volné rohy čtverce X. Tvar je pořád středově souměrný. Nekonečná smyčka.' },
+];
+
+// [klíč, popisek, min, max, krok, jednotka]  nebo  [klíč, popisek, 'bool']
+const DURATION = ['duration', 'Délka růstu lístečku', 150, 2500, 10, 'ms'];
+const STAGGER = ['stagger', 'Rozestup mezi lístečky', 0, 500, 5, 'ms'];
+const MELT = ['melt', 'Stažení čtverce do středu', 0, 2000, 10, 'ms'];
+const SQUARE = ['square', 'Velikost čtverce', 1, 1.6, 0.01, ''];
+const ROUND = ['roundness', 'Zaoblení rohů čtverce', 0, 1, 0.01, ''];
+const HOLD = ['hold', 'Výdrž před zcvrknutím', 0, 5000, 50, 'ms'];
+const REVERSE = ['reverse', 'Po výdrži se zase zcvrkne', 'bool'];
+const SCHEMA = {
+  'grow-pop': [DURATION, STAGGER, ['overshoot', 'Přerostení', 0, 0.5, 0.01, ''], MELT, SQUARE, ROUND, HOLD, REVERSE],
+  'grow-squish': [DURATION, STAGGER, ['impact', 'Síla nárazu', 0, 0.5, 0.01, ''], ['squish', 'Zmenšení zaoblení', 0, 1, 0.01, ''], MELT, SQUARE, ROUND, HOLD, REVERSE],
+  loader: [['period', 'Délka jedné otáčky', 400, 5000, 10, 'ms'], ['min', 'Nejmenší velikost', 0.2, 1, 0.01, ''],
+    ['max', 'Největší velikost', 0.5, 1.3, 0.01, ''], ['sharpness', 'Šířka vlny (víc = užší)', 0.3, 6, 0.1, '']],
+  pairs: [['step', 'Délka jednoho kroku', 300, 4000, 10, 'ms'], ['transition', 'Z toho přechod', 50, 2000, 10, 'ms'],
+    ['base', 'Velikost ostatních lístečků', 0.2, 1, 0.01, ''], ['peak', 'Velikost zvětšeného páru', 0.6, 1.4, 0.01, '']],
+  spin: [['turn', 'Délka pootočení o 90°', 150, 2000, 10, 'ms'], ['pause', 'Zastavení po pootočení', 0, 3000, 10, 'ms'],
+    ['shift', 'Posun výřezů (v šířkách výřezu)', 0, 1.5, 0.05, ''], ['radius', 'Zaoblení X (1 = roh z SVG)', 0.3, 1, 0.01, ''],
+    ['seed', 'Náhoda (jiné číslo = jiné posuny)', 1, 99, 1, '']],
+};
+
+const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#004c3a' };
+const cards = [];
+const $ = (sel, root = document) => root.querySelector(sel);
+
+function h(tag, attrs = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  e.append(...children);
+  return e;
+}
+
+function snippet(card) {
+  const def = ANIMATIONS[card.animation].params;
+  const diff = Object.fromEntries(Object.entries(card.params).filter(([k, v]) => v !== def[k]));
+  const params = Object.keys(diff).length ? ` params='${JSON.stringify(diff)}'` : '';
+  return `<leaf-anim src="${state.source}" animation="${card.animation}"${params}></leaf-anim>`;
+}
+
+function buildCard(cfg) {
+  const def = ANIMATIONS[cfg.animation];
+  const card = { ...cfg, params: { ...def.params }, repeat: true, timer: 0 };
+  const host = h('div', { class: 'host' });
+  const code = h('pre');
+  const controls = h('div', { class: 'controls' });
+
+  if (def.loop) {
+    const btn = h('button', { onclick: () => {
+      if (!card.anim.paused) { card.anim.pause(); btn.textContent = '▶ Pokračovat'; }
+      else { card.anim.play(); btn.textContent = '❚❚ Pauza'; }
+    } }, '❚❚ Pauza');
+    controls.append(btn);
+  } else {
+    card.scrub = h('input', { type: 'range', class: 'scrub', min: 0, max: 1000, step: 1, value: 0, title: 'Posun v čase',
+      oninput: () => { clearTimeout(card.timer); card.anim.pause(); card.anim.seek(card.scrub.value / 1000 * card.anim.duration); } });
+    const repeat = h('input', { type: 'checkbox', checked: '', onchange: () => { card.repeat = repeat.checked; } });
+    controls.append(
+      h('button', { onclick: () => { clearTimeout(card.timer); card.anim.restart(); } }, '↻ Přehrát znovu'),
+      h('label', { class: 'check' }, repeat, 'Opakovat'),
+      card.scrub,
+    );
+  }
+
+  card.status = h('span', { class: 'status' });
+  card.exportBtn = h('button', { title: 'Stáhne ZIP s průhlednými PNG snímky a návodem na převod do videa', onclick: () => exportCard(card) }, '⇩ Export PNG');
+  controls.append(card.exportBtn, card.status);
+
+  const grid = h('div', { class: 'params' });
+  const inputs = {};
+  for (const [key, label, min, max, step, unit] of SCHEMA[cfg.animation]) {
+    if (min === 'bool') {
+      const input = h('input', { type: 'checkbox', onchange: () => { card.params[key] = input.checked; update(card); } });
+      input.checked = card.params[key];
+      inputs[key] = { input, show: () => { input.checked = card.params[key]; } };
+      grid.append(h('label', { class: 'check wide' }, input, label));
+      continue;
+    }
+    const out = h('output');
+    const show = () => { input.value = card.params[key]; out.textContent = unit ? `${card.params[key]} ${unit}` : String(card.params[key]); };
+    const input = h('input', { type: 'range', min, max, step, value: card.params[key], oninput: () => {
+      card.params[key] = Number(input.value);
+      show();
+      update(card);
+    } });
+    inputs[key] = { input, show };
+    show();
+    grid.append(h('label', {}, label), input, out);
+  }
+  grid.append(h('button', { class: 'reset', onclick: () => {
+    card.params = { ...def.params };
+    for (const { show } of Object.values(inputs)) show();
+    update(card);
+  } }, 'Výchozí hodnoty'));
+
+  card.el = h('article', { class: 'card' },
+    h('div', { class: 'card-head' }, h('span', { class: 'tag' }, cfg.tag), h('h2', {}, cfg.title)),
+    h('p', { class: 'desc' }, cfg.text),
+    h('div', { class: 'stage' }, host),
+    controls,
+    h('details', {}, h('summary', {}, 'Parametry'), grid),
+    h('div', { class: 'code' }, code, h('button', { onclick: (e) => copy(code.textContent, e.target) }, 'Kopírovat')),
+  );
+  card.host = host;
+  card.code = code;
+  host.addEventListener('leaf-finish', () => {
+    if (card.repeat) card.timer = setTimeout(() => card.anim.restart(), 1100 / state.speed);
+  });
+  return card;
+}
+
+function mount(card) {
+  card.anim?.destroy();
+  clearTimeout(card.timer);
+  card.anim = new LeafAnimation(card.host, state.geometry, {
+    animation: card.animation, params: card.params, speed: state.speed,
+    color: state.color, debug: state.debug, start: 'load',
+  });
+  card.code.textContent = snippet(card);
+}
+
+function update(card) {
+  clearTimeout(card.timer);
+  card.anim.setParams(card.params);
+  if (!ANIMATIONS[card.animation].loop) card.anim.restart();
+  card.code.textContent = snippet(card);
+}
+
+const plural = (n, one, few, many) => `${n} ${n === 1 ? one : n >= 2 && n <= 4 ? few : many}`;
+
+function toHex(color) {
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillStyle = color;
+  return ctx.fillStyle;
+}
+
+function useGeometry(geometry, source, text) {
+  state.geometry = geometry;
+  state.source = source;
+  state.svgText = text;
+  $('#svg-name').textContent = source;
+  $('#svg-info').textContent = `tvar lístečku · ${kb(text)}`;
+  if (geometry.fill) {
+    state.color = toHex(geometry.fill);
+    $('#color').value = state.color;
+  }
+  cards.forEach(mount);
+  const g = geometry;
+  $('#info').innerHTML = `Zdroj: <b></b> · ${plural(g.petals.length, 'lísteček', 'lístečky', 'lístečků')}`
+    + ` · ${plural(g.slits.length, 'výřez', 'výřezy', 'výřezů')}`;
+  $('#info b').textContent = source;
+}
+
+function showError(err) {
+  $('#info').innerHTML = '<span class="err"></span>';
+  $('#info .err').textContent = 'SVG nejde použít: ' + err.message;
+}
+
+async function copy(text, btn) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch {
+    // starší způsob pro prohlížeče, které schránku přes API nepustí
+    const area = h('textarea', { style: 'position:fixed;left:-10000px;top:0', readonly: '' });
+    area.value = text;
+    document.body.append(area);
+    area.select();
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    area.remove();
+  }
+  const old = btn.dataset.label ||= btn.textContent;
+  btn.textContent = ok ? 'Zkopírováno' : 'Nejde zkopírovat, použij Stáhnout';
+  setTimeout(() => { btn.textContent = old; }, ok ? 1200 : 3000);
+}
+
+function loadFile(file) {
+  if (!file) return;
+  file.text().then((text) => useGeometry(parseLeafSvg(text), file.name, text)).catch(showError);
+}
+
+// ── export snímků ──
+// Snímky se vykreslují přesně podle času (žádný nevypadne), na průhledné pozadí, a balí se do ZIPu.
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+/** ZIP bez komprese (PNG jsou už komprimované). files = [{ name, data: Uint8Array }] */
+function makeZip(files) {
+  const now = new Date();
+  const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(10, time, true); lh.setUint16(12, date, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, name.length, true);
+    parts.push(lh, name, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(12, time, true); ch.setUint16(14, date, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(ch, name);
+    offset += 30 + name.length + size;
+  }
+  const size = central.reduce((s, p) => s + p.byteLength, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, size, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end], { type: 'application/zip' });
+}
+
+function convertCommands(fps, name, loop) {
+  return `# Převod snímků na video s průhledným pozadím (ffmpeg, spouštět ve složce se snímky)
+${loop ? '# Snímky jsou jedna celá otočka smyčky: video jde přehrávat dokola bez švu.\n' : ''}
+# ProRes 4444 – DaVinci Resolve, Final Cut, Premiere, After Effects, Keynote
+ffmpeg -framerate ${fps} -i snimek_%04d.png -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -vendor apl0 ${name}.mov
+
+# WebM VP9 – web v Chrome, Firefoxu a Edge
+ffmpeg -framerate ${fps} -i snimek_%04d.png -c:v libvpx-vp9 -pix_fmt yuva420p -crf 30 -b:v 0 -row-mt 1 ${name}.webm
+
+# HEVC – web v Safari a na iPhonu (vyrobí jen Mac)
+ffmpeg -framerate ${fps} -i snimek_%04d.png -c:v hevc_videotoolbox -allow_sw 1 -alpha_quality 0.75 -pix_fmt bgra -q:v 65 -tag:v hvc1 ${name}-safari.mov
+`;
+}
+
+/** Matice z atributu transform="matrix(…)" (bez něj jednotková). */
+const matrixOf = (node) => {
+  const m = (node.getAttribute('transform') || '').match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi);
+  return m && m.length === 6 ? m.map(Number) : [1, 0, 0, 1, 0, 0];
+};
+
+async function exportCard(card) {
+  if (card.exporting) return;
+  card.exporting = true;
+  card.exportBtn.disabled = true;
+  const fps = Number($('#ex-fps').value) || 60;
+  const width = Math.max(64, Math.round(Number($('#ex-width').value) / 2) * 2 || 1080);
+  const box = h('div', { style: 'position:fixed;left:-10000px;top:0;width:100px' });
+  document.body.append(box);
+  try {
+    const anim = new LeafAnimation(box, state.geometry, { animation: card.animation, params: card.params, color: state.color, start: 'manual' });
+    const { start, duration, loop } = anim.clip();
+    // smyčka: otočka se rozdělí přesně na celý počet snímků, aby na sebe video navazovalo
+    const steps = Math.max(1, Math.round((duration / 1000) * fps));
+    const count = steps + (loop ? 0 : 1), dt = loop ? duration / steps : 1000 / fps;
+
+    // 1) všechny snímky spočítat a najít rámeček, do kterého se vejdou (aspoň celý viewBox)
+    const vb = state.geometry.viewBox;
+    let x0 = vb[0], y0 = vb[1], x1 = vb[0] + vb[2], y1 = vb[1] + vb[3];
+    const frames = [];
+    for (let i = 0; i < count; i++) {
+      anim.seek(start + Math.min(duration, i * dt));
+      const f = { d: anim.path.getAttribute('d'), m: matrixOf(anim.group), hidden: anim.group.getAttribute('visibility') === 'hidden' };
+      frames.push(f);
+      if (f.hidden) continue;
+      const v = f.d.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(Number);
+      for (let j = 0; j + 1 < v.length; j += 2) {
+        const x = f.m[0] * v[j] + f.m[2] * v[j + 1] + f.m[4], y = f.m[1] * v[j] + f.m[3] * v[j + 1] + f.m[5];
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+    }
+    anim.destroy();
+    const pad = 0.03 * Math.max(x1 - x0, y1 - y0);
+    x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+    const scale = width / (x1 - x0);
+    const height = Math.max(2, Math.round(((y1 - y0) * scale) / 2) * 2);
+
+    // 2) vykreslit na průhledné plátno a zabalit
+    const canvas = h('canvas', { width, height });
+    const ctx = canvas.getContext('2d');
+    const files = [];
+    for (let i = 0; i < frames.length; i++) {
+      const f = frames[i];
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      if (!f.hidden) {
+        ctx.setTransform(scale, 0, 0, scale, -x0 * scale, -y0 * scale);
+        ctx.transform(...f.m);
+        ctx.fillStyle = state.color;
+        ctx.fill(new Path2D(f.d));
+      }
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      files.push({ name: `snimek_${String(i).padStart(4, '0')}.png`, data: new Uint8Array(await blob.arrayBuffer()) });
+      if (i % 10 === 0) card.status.textContent = `Snímek ${i + 1} / ${frames.length}…`;
+    }
+    files.push({ name: 'prevod.txt', data: new TextEncoder().encode(convertCommands(fps, card.animation, loop)) });
+    const zip = makeZip(files);
+    const a = h('a', { href: URL.createObjectURL(zip), download: `${card.animation}-${width}x${height}-${fps}fps.zip` });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    card.status.textContent = `Hotovo: ${frames.length} snímků ${width}×${height} px${loop ? ', jedna otočka smyčky' : ''}.`;
+  } catch (err) {
+    console.error(err);
+    card.status.textContent = 'Export se nepovedl: ' + err.message;
+  } finally {
+    box.remove();
+    card.exporting = false;
+    card.exportBtn.disabled = false;
+  }
+}
+
+// ── soubory pro web ──
+
+const kb = (text) => `${Math.max(1, Math.round(new Blob([text]).size / 1024))} kB`;
+
+function download(text, name, type) {
+  const a = h('a', { href: URL.createObjectURL(new Blob([text], { type })), download: name });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+// knihovnu načíst dopředu, aby šla zkopírovat hned po kliknutí
+fetch('leaf-anim.js', { cache: 'no-store' }).then((r) => r.text()).then((text) => {
+  state.jsText = text;
+  $('#js-info').textContent = `knihovna s animacemi · ${kb(text)}`;
+});
+$('#dl-js').addEventListener('click', () => state.jsText && download(state.jsText, 'leaf-anim.js', 'text/javascript'));
+$('#copy-js').addEventListener('click', (e) => state.jsText && copy(state.jsText, e.target));
+$('#dl-svg').addEventListener('click', () => state.svgText && download(state.svgText, state.source, 'image/svg+xml'));
+$('#copy-svg').addEventListener('click', (e) => state.svgText && copy(state.svgText, e.target));
+
+// ── ovládání ──
+for (const cfg of CARDS) {
+  const card = buildCard(cfg);
+  cards.push(card);
+  $('#grid').append(card.el);
+}
+
+$('#usage-code').textContent =
+`<script type="module" src="/cesta/leaf-anim.js"><\/script>
+
+<!-- 1A / 1B: růst (spustí se, až je vidět) -->
+<leaf-anim src="/cesta/Curve.svg" animation="grow-pop" style="width: 240px"></leaf-anim>
+<leaf-anim src="/cesta/Curve.svg" animation="grow-squish" style="width: 240px"></leaf-anim>
+
+<!-- 2: načítání -->
+<leaf-anim src="/cesta/Curve.svg" animation="loader" style="width: 48px"></leaf-anim>
+
+<!-- 3: protilehlé páry -->
+<leaf-anim src="/cesta/Curve.svg" animation="pairs" style="width: 240px"></leaf-anim>
+
+<!-- 4: otáčení výřezů -->
+<leaf-anim src="/cesta/Curve.svg" animation="spin" style="width: 240px"></leaf-anim>`;
+$('#export-code').textContent = convertCommands(60, 'animace', false);
+$('[data-copy="usage-code"]').addEventListener('click', (e) => copy($('#usage-code').textContent, e.target));
+$('[data-copy="export-code"]').addEventListener('click', (e) => copy($('#export-code').textContent, e.target));
+$('#ex-fps').addEventListener('change', () => { $('#export-code').textContent = convertCommands(Number($('#ex-fps').value), 'animace', false); });
+
+$('#speed').addEventListener('click', (e) => {
+  const v = e.target.dataset.v;
+  if (!v) return;
+  state.speed = Number(v);
+  for (const b of $('#speed').children) b.classList.toggle('on', b === e.target);
+  cards.forEach((c) => c.anim?.setSpeed(state.speed));
+});
+$('#bg').addEventListener('click', (e) => {
+  const v = e.target.dataset.v;
+  if (!v) return;
+  document.body.classList.toggle('dark', v === 'dark');
+  for (const b of $('#bg').children) b.classList.toggle('on', b === e.target);
+});
+$('#color').addEventListener('input', (e) => {
+  state.color = e.target.value;
+  cards.forEach((c) => c.anim?.setColor(state.color));
+});
+$('#debug').addEventListener('change', (e) => {
+  state.debug = e.target.checked;
+  cards.forEach((c) => c.anim?.setDebug(state.debug));
+});
+$('#file').addEventListener('change', (e) => loadFile(e.target.files[0]));
+
+let dragDepth = 0;
+addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('dragging');
+  loadFile(e.dataTransfer.files[0]);
+});
+
+// posuvník času u růstu sleduje přehrávání
+(function follow() {
+  for (const c of cards) {
+    if (c.scrub && c.anim?.playing) c.scrub.value = Math.round(c.anim.time / c.anim.duration * 1000);
+  }
+  requestAnimationFrame(follow);
+})();
+
+try {
+  const res = await fetch('Curve.svg', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Curve.svg se nepodařilo načíst (${res.status}).`);
+  const text = await res.text();
+  useGeometry(parseLeafSvg(text), 'Curve.svg', text);
+} catch (err) {
+  showError(err);
+}
+</script>
+</body>
+</html>
