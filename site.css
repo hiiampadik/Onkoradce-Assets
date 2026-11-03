@@ -26,7 +26,88 @@
   :root { --space-page: 16px; }
 }
 
-/* Hlavička s logem a navigací */
+/* Základ stránky */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Obsah stránky: nadpis, úvodní věta a bloky pod sebou */
+.page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 32px var(--space-page) 64px;
+}
+
+.page > h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+}
+
+.page-lead {
+  margin: 4px 0 var(--space-section);
+  color: var(--muted);
+}
+
+/* Karta */
+.surface {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.btn {
+  padding: 10px 8px;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { background: #f3f6f4; }
+
+.btn.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.btn.primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+
+.page :focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.9rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Hlavička s logem a navigací (vykresluje ji <site-header> ze site.js) */
+site-header { display: block; }
+
 .site-header {
   background: var(--card, #fff);
   border-bottom: 1px solid var(--line, #dfe6e2);

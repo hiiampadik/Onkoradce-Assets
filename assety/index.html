@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assety ke stažení · Onkorádce</title>
+  <meta name="description" content="Loga a další soubory značky Onkorádce ke stažení nebo zkopírování.">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../site.css">
+  <link rel="stylesheet" href="assety.css">
+  <script src="../site.js"></script>
+</head>
+<body>
+  <site-header current="assety" base="../"></site-header>
+
+  <main class="page">
+    <h1>Assety ke stažení</h1>
+    <p class="page-lead">U každého souboru je ukázka, použité barvy a tlačítka pro stažení nebo zkopírování SVG.</p>
+
+    <section class="surface assets" aria-label="Seznam assetů">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ukázka</th>
+            <th scope="col">Asset</th>
+            <th scope="col">Použité barvy</th>
+            <th scope="col"><span class="visually-hidden">Stažení a kopírování</span></th>
+          </tr>
+        </thead>
+        <tbody id="assets-body"></tbody>
+      </table>
+      <p class="assets-error" id="assets-error" hidden></p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="../brand.js"></script>
+  <script src="assety.js"></script>
+</body>
+</html>

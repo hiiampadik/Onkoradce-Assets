@@ -1,13 +1,37 @@
 # Onkorádce Assets
 
-Statický web s logem a navigací se dvěma záložkami. Bez závislostí a bez buildu – čisté HTML, CSS a JavaScript.
+Statický web s logem a navigací se čtyřmi záložkami. Bez závislostí a bez buildu – čisté HTML, CSS a JavaScript.
 
 | Záložka | Cesta | Co to je |
 |---|---|---|
 | Generátor tvarů | `/` ([`index.html`](index.html)) | Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Kliknutím na tvar se SVG zkopíruje do schránky, tlačítkem se stáhne jako soubor. |
 | Animace | `/animace/` ([`animace/`](animace/)) | Knihovna `<leaf-anim>` a ukázka animací lístečku, popis je v [`animace/README.md`](animace/README.md). |
+| Barvy | `/barvy/` ([`barvy/`](barvy/)) | Barvy loga a palety Primitives a Semantics z `.clr` souborů. Kliknutím se zkopíruje HEX nebo `rgb()`. |
+| Assety ke stažení | `/assety/` ([`assety/`](assety/)) | Tabulka assetů: ukázka, použité barvy a tlačítka Stáhnout SVG a Kopírovat SVG. |
 
-Logo je v [`assets/Logo.svg`](assets/Logo.svg). Hlavička a navigace jsou na obou stránkách stejné, styl je ve [`site.css`](site.css). Záložky *Barvy* a *Assety ke stažení* jsou zatím neaktivní (v navigaci jsou jako `<span class="is-disabled">`). Aktivní záložku přidáš tak, že vytvoříš podsložku s `index.html`, zkopíruješ do ní hlavičku a v navigaci na všech stránkách nahradíš `<span>` odkazem `<a>`.
+## Společný kód
+
+- [`site.css`](site.css) – barvy, rozestupy, základ stránky, tlačítka, hlavička.
+- [`site.js`](site.js) – element `<site-header current="…" base="…">` s logem a navigací (jediné místo, kde jsou záložky vyjmenované) a `SiteUtil` pro kopírování, stahování a hlášky.
+- [`brand.js`](brand.js) – barvy loga, seznam assetů a přebarvení SVG. Má testy v `test/brand.test.js`.
+- [`palette.js`](palette.js) – barvy z palet `Onkoradce RGB Color Primitives.clr` a `Onkoradce RGB Color Semantics.clr`. **Je generovaný**, needituje se ručně.
+
+## Barevné palety (.clr)
+
+Zdrojem barev jsou macOS palety v kořeni projektu. Web je za běhu nečte, používá hotový `palette.js`. Po změně palety ho vygeneruj znovu:
+
+```bash
+node scripts/build-palette.js
+```
+
+[`scripts/clr.js`](scripts/clr.js) umí číst formát `.clr` bez závislostí. Hodnoty bere jako sRGB a zaokrouhluje na 8 bitů. U sémantických barev skript dohledá primitivum se stejnou hodnotou a uloží odkaz na něj (např. `text/brand/strong` → `green/900`). Test `test/clr.test.js` hlídá, aby `palette.js` odpovídal aktuálním `.clr` souborům, proto musí být v repozitáři i ony.
+
+## Jak přidat asset nebo barvu
+
+- **Barva loga:** přidej HEX do `COLORS` v [`brand.js`](brand.js). Objeví se v záložce Barvy a jako další varianta loga.
+- **Barva z palety:** změň `.clr` a spusť `node scripts/build-palette.js`.
+- **Asset:** nahraj SVG do [`assets/`](assets/) a doplň ho do `ASSETS` v [`brand.js`](brand.js) (`id`, `name`, `file`, `variants`). Varianty vznikají přebarvením všech výplní, takže to funguje pro jednobarevné SVG.
+- **Záložka:** vytvoř podsložku s `index.html` (podle `barvy/index.html`) a přidej ji do `NAV` v [`site.js`](site.js). Záložka s `disabled: true` je zatím neaktivní.
 
 ## Spuštění
 
