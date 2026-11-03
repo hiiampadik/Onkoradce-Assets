@@ -1,10 +1,34 @@
 (function () {
   'use strict';
 
+  // Kdyby se načetl nový app.js se starým shape.js (nebo naopak), nechybělo by nic viditelného, jen by se
+  // velikost náhledu tiše spočítala špatně. Proto se ověří, že shape.js umí všechno, co app.js potřebuje.
+  var missing = ['REF_HEIGHT', 'MM_PER_PX', 'DEFAULT_CUT_MM', 'DEFAULT_AFFINITY_ZOOM', 'affinityScale', 'glowSvg']
+    .filter(function (k) { return ShapeGen[k] === undefined; });
+  if (missing.length) {
+    var banner = document.createElement('p');
+    banner.className = 'stale-banner';
+    banner.textContent = 'Načetla se zastaralá verze souborů (v shape.js chybí: ' + missing.join(', ') +
+      '). Obnov stránku bez cache: Safari ⌥⌘R, Chrome ⇧⌘R.';
+    document.querySelector('main').before(banner);
+    return;
+  }
+
   var D = ShapeGen.DEFAULTS;
   var MAX_POINTS = ShapeGen.MAX_GLOW_POINTS;
   var NEW_COLORS = ShapeGen.NEW_GLOW_COLORS;
   var NEW_SIZE = 0.5;
+  var MM_PER_PX = ShapeGen.MM_PER_PX;
+  var SIZE_MAX_PX = 1000; // největší tvar na posuvníku Velikost, podle něj se škáluje náhled
+  var UNIT_KEY = 'onkoradce-unit';
+  var ZOOM_KEY = 'onkoradce-affinity-zoom';
+  // Výchozí šířka výřezu (pro výšku 1000 px) je v každé jednotce jiná: 23 px, nebo 5 mm.
+  var DEFAULT_CUT_PX = { px: D.cutWidth, mm: ShapeGen.DEFAULT_CUT_MM / MM_PER_PX };
+  // Rozsahy posuvníků Velikost a Šířka výřezu v obou jednotkách: [min, max, krok].
+  var RANGES = {
+    px: { size: [100, 1000, 10], cut: [4, 25, 0.5] },
+    mm: { size: [25, 265, 0.5], cut: [1, 6.7, 0.1] }
+  };
 
   function $(id) { return document.getElementById(id); }
   function all(selector) { return Array.prototype.slice.call(document.querySelectorAll(selector)); }
@@ -24,6 +48,8 @@
     copy: $('copy'),
     download: $('download'),
     reset: $('reset'),
+    fit: $('fit'),
+    affZoom: $('affZoom'),
     glow: $('glow'),
     glowArt: $('glow-art'),
     glowHandles: $('glow-handles'),
@@ -40,19 +66,61 @@
     cutWidth: $('cutWidth-out'),
     radius: $('radius-out'),
     offset: $('offset-out'),
+    affZoom: $('affZoom-out'),
     glowSize: $('glow-size-out')
   };
 
   // mode: 'solid' (jednobarevný tvar) nebo 'glow' (maska se září z bodů)
-  var state = { mode: 'solid', points: [], selected: 0 };
+  // Rozměry se drží v px, i když se zobrazují v mm: posuvník v mm má hrubší krok, a kdyby se hodnota
+  // četla z něj, měnila by se při každém přepnutí jednotek.
+  // view: 'actual' (náhled ve skutečné velikosti, 1 px tvaru = 1 CSS px) nebo 'fit' (zmenšený na šířku okna)
+  // cutIsDefault: šířku výřezu uživatel zatím neměnil, takže se při přepnutí jednotek přepne na výchozí hodnotu
+  // té druhé jednotky. Jakmile ji změní, přepnutí jednotek jen přepočítá zobrazení a tvar se nemění.
+  var state = { mode: 'solid', unit: 'mm', view: 'actual', affZoom: ShapeGen.DEFAULT_AFFINITY_ZOOM, affDpr: window.devicePixelRatio || 1, heightPx: D.height, cutPx: D.cutWidth, cutIsDefault: true, points: [], selected: 0 };
   var current = { svg: '', width: 0, height: 0 };
   var availWidth = 0; // šířka, kterou má náhled ve stagi k dispozici
 
+  function toPx(v) { return state.unit === 'mm' ? v / MM_PER_PX : v; }
+  function fromPx(px) { return state.unit === 'mm' ? px * MM_PER_PX : px; }
+  // Číslo v aktuální jednotce (px celé, mm na desetiny) a s jednotkou.
+  function num(px) { return state.unit === 'mm' ? round(px * MM_PER_PX) : Math.round(px); }
+  function len(px) { return num(px) + ' ' + state.unit; }
+
+  function setRange(input, range) {
+    input.min = range[0];
+    input.max = range[1];
+    input.step = range[2];
+  }
+
+  // Posuvníky Velikost a Šířka výřezu a texty u nich podle zvolené jednotky.
+  function applyUnit() {
+    var r = RANGES[state.unit];
+    setRange(el.size, r.size);
+    setRange(el.cutWidth, r.cut);
+    el.size.value = fromPx(state.heightPx);
+    el.cutWidth.value = fromPx(state.cutPx);
+    $('cut-note').textContent = 'Platí pro výšku ' + len(ShapeGen.REF_HEIGHT) +
+      '. Při poloviční výšce je výřez 75 % široký, při čtvrtinové 56 % atd.';
+    all('.unit').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.unit === state.unit));
+    });
+  }
+
+  function setUnit(unit) {
+    state.unit = unit;
+    if (state.cutIsDefault) state.cutPx = DEFAULT_CUT_PX[unit];
+    try { localStorage.setItem(UNIT_KEY, unit); } catch (e) { /* soukromý režim */ }
+    applyUnit();
+    render();
+  }
+
   function setDefaults() {
     el.depth.value = Math.round(D.depth * 100);
-    el.size.value = D.height;
+    state.heightPx = D.height;
+    state.cutPx = DEFAULT_CUT_PX[state.unit];
+    state.cutIsDefault = true;
+    applyUnit();
     el.color.value = D.color;
-    el.cutWidth.value = D.cutWidth;
     el.radius.value = D.radius * 100;
     el.offset.value = D.offset * 100;
     state.points = ShapeGen.DEFAULT_GLOW.map(function (p) { return Object.assign({}, p); });
@@ -62,9 +130,9 @@
   function read() {
     return {
       depth: el.depth.value / 100,
-      height: +el.size.value,
+      height: state.heightPx,
       color: el.color.value,
-      cutWidth: +el.cutWidth.value,
+      cutWidth: state.cutPx,
       radius: el.radius.value / 100,
       offset: el.offset.value / 100
     };
@@ -75,12 +143,19 @@
     availWidth = el.stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   }
 
-  // Náhled se zmenšuje v jednom měřítku pro všechny velikosti: největší tvar (konec posuvníku
-  // Velikost) se vejde na šířku stagi a menší jsou úměrně menší. Kdyby se každý tvar vtěsnával
-  // do stagi zvlášť, vypadaly by všechny velké velikosti stejně.
-  function previewScale() {
+  // Kolik CSS px zabere 1 px tvaru při 100 % podle Affinity (kalibrace měřítka, viz shape.js).
+  function affinityScale() {
+    return ShapeGen.affinityScale(state.affZoom, window.devicePixelRatio, state.affDpr);
+  }
+
+  // Zvětšení náhledu vůči 100% zobrazení v Affinity. Výchozí je 100 %. V režimu „přizpůsobit“ se
+  // zmenšuje v jednom měřítku pro všechny velikosti: největší tvar (konec posuvníku Velikost) se vejde
+  // na šířku stagi a menší jsou úměrně menší. Kdyby se každý tvar vtěsnával do stagi zvlášť, vypadaly
+  // by všechny velké velikosti stejně.
+  function previewZoom() {
+    if (state.view === 'actual') return 1;
     if (availWidth <= 0) return 1; // stránka ještě nemá rozměry (skrytý panel), dopočítá se při změně velikosti
-    return Math.min(1, availWidth / (+el.size.max * D.aspect));
+    return Math.min(1, availWidth / (SIZE_MAX_PX * D.aspect * affinityScale()));
   }
 
   function render() {
@@ -93,24 +168,28 @@
 
     var o = ShapeGen.outline(params);
     if (state.mode === 'glow') {
-      current.svg = ShapeGen.glowSvg(params, state.points);
+      current.svg = ShapeGen.glowSvg(params, state.points, state.unit);
       el.glowArt.innerHTML = current.svg;
     } else {
-      current.svg = ShapeGen.svg(params);
+      current.svg = ShapeGen.svg(params, state.unit);
       el.shape.innerHTML = current.svg;
     }
     current.width = o.width;
     current.height = o.height;
 
-    var scale = previewScale();
-    el.shape.style.width = el.glow.style.width = o.width * scale + 'px';
+    var zoom = previewZoom();
+    el.shape.style.width = el.glow.style.width = o.width * affinityScale() * zoom + 'px';
 
     out.depth.textContent = el.depth.value + ' %';
-    out.size.textContent = el.size.value + ' px';
-    out.cutWidth.textContent = round(params.cutWidth) + ' px · teď ' + round(o.params.cutWidth) + ' px';
-    out.radius.textContent = round(params.radius * 100) + ' % (' + round(params.radius * params.height) + ' px)';
+    out.size.textContent = len(state.heightPx);
+    out.cutWidth.textContent = len(state.cutPx) + ' · teď ' + len(o.params.cutWidth);
+    out.radius.textContent = round(params.radius * 100) + ' % (' + len(params.radius * params.height) + ')';
     out.offset.textContent = round(params.offset * 100) + ' %';
-    el.dims.textContent = Math.round(o.width) + ' × ' + Math.round(o.height) + ' px · náhled ' + Math.round(scale * 100) + ' %';
+    el.dims.textContent = num(o.width) + ' × ' + num(o.height) + ' ' + state.unit + ' · náhled ' + Math.round(zoom * 100) + ' %' +
+      (zoom === 1 ? ' jako v Affinity' : ' (100 % = jako v Affinity)');
+    el.fit.textContent = state.view === 'actual' ? 'Přizpůsobit oknu' : 'Zobrazit ve 100 %';
+    // Co se právě používá: výsledné zvětšení a pixelový poměr displeje (pomůže při hledání rozdílu proti Affinity).
+    out.affZoom.textContent = Math.round(affinityScale() * 100) + ' % · dpr ' + round(window.devicePixelRatio || 1);
   }
 
   /* ───────────── Body záře ───────────── */
@@ -319,21 +398,56 @@
 
   function downloadSvg() {
     var name = (state.mode === 'glow' ? 'shape-glow-' : 'shape-') +
-      Math.round(current.width) + 'x' + Math.round(current.height) + '.svg';
+      num(current.width) + 'x' + num(current.height) + (state.unit === 'mm' ? 'mm' : '') + '.svg';
     SiteUtil.downloadText(name, current.svg, 'image/svg+xml');
     SiteUtil.toast('SVG staženo');
   }
 
-  ['depth', 'size', 'color', 'cutWidth', 'radius', 'offset'].forEach(function (k) {
+  ['depth', 'color', 'radius', 'offset'].forEach(function (k) {
     el[k].addEventListener('input', render);
+  });
+  el.size.addEventListener('input', function () {
+    state.heightPx = toPx(+el.size.value);
+    render();
+  });
+  el.cutWidth.addEventListener('input', function () {
+    state.cutPx = toPx(+el.cutWidth.value);
+    state.cutIsDefault = false;
+    render();
+  });
+  all('.unit').forEach(function (b) {
+    b.addEventListener('click', function () { setUnit(b.dataset.unit); });
   });
   all('.mode').forEach(function (b) {
     b.addEventListener('click', function () { setMode(b.dataset.mode); });
+  });
+  el.affZoom.addEventListener('input', function () {
+    var v = parseFloat(el.affZoom.value);
+    if (!(v >= 20 && v <= 1000)) return; // rozepsané nebo neplatné číslo se ignoruje
+    state.affZoom = v / 100;
+    state.affDpr = window.devicePixelRatio || 1;
+    try {
+      // Výchozí hodnotu není třeba si pamatovat, jinak by zůstala uložená i po změně výchozí v kódu.
+      if (Math.abs(state.affZoom - ShapeGen.DEFAULT_AFFINITY_ZOOM) < 0.005) localStorage.removeItem(ZOOM_KEY);
+      else localStorage.setItem(ZOOM_KEY, JSON.stringify({ zoom: state.affZoom, dpr: state.affDpr }));
+    } catch (e) { /* soukromý režim */ }
+    render();
+  });
+  // Při změně přiblížení stránky nebo přesunu na jiný displej se změní devicePixelRatio.
+  window.addEventListener('resize', render);
+  el.fit.addEventListener('click', function () {
+    state.view = state.view === 'actual' ? 'fit' : 'actual';
+    render();
   });
   el.shape.addEventListener('click', copySvg);
   el.copy.addEventListener('click', copySvg);
   el.download.addEventListener('click', downloadSvg);
   el.reset.addEventListener('click', function () {
+    // Kalibrace náhledu se vrací také, jinak by špatně zadané číslo zůstalo uložené v prohlížeči.
+    state.affZoom = ShapeGen.DEFAULT_AFFINITY_ZOOM;
+    state.affDpr = window.devicePixelRatio || 1;
+    el.affZoom.value = Math.round(state.affZoom * 100);
+    try { localStorage.removeItem(ZOOM_KEY); } catch (e) { /* soukromý režim */ }
     setDefaults();
     renderPoints();
   });
@@ -347,6 +461,17 @@
     render();
   }).observe(el.stage);
 
+  // px jsou zatím vypnuté: přepínač jednotek je v index.html zakomentovaný a počítá se jen v mm.
+  // Pro návrat px odkomentuj přepínač a tento řádek:
+  // try { state.unit = localStorage.getItem(UNIT_KEY) === 'mm' ? 'mm' : 'px'; } catch (e) { /* zůstane mm */ }
+  try {
+    var saved = JSON.parse(localStorage.getItem(ZOOM_KEY));
+    if (saved && saved.zoom >= 0.2 && saved.zoom <= 10 && saved.dpr > 0) {
+      state.affZoom = saved.zoom;
+      state.affDpr = saved.dpr;
+    }
+  } catch (e) { /* zůstane výchozí měřítko */ }
+  el.affZoom.value = Math.round(state.affZoom * 100);
   measureStage();
   setDefaults();
   renderPoints();

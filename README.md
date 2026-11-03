@@ -4,7 +4,7 @@ Statický web s logem a navigací se čtyřmi záložkami. Bez závislostí a be
 
 | Záložka | Cesta | Co to je |
 |---|---|---|
-| Generátor tvarů | `/` ([`index.html`](index.html)) | Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Má dvě varianty: **Jednobarevný** (kliknutím na tvar se SVG zkopíruje) a **Maska se září** (`/#zare`), kde je tvar jen maska a barvy do ní prosvítají z bodů. SVG se zkopíruje do schránky nebo stáhne jako soubor. |
+| Generátor tvarů | `/` ([`index.html`](index.html)) | Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Má dvě varianty: **Jednobarevný** (kliknutím na tvar se SVG zkopíruje) a **Maska se září** (`/#zare`), kde je tvar jen maska a barvy do ní prosvítají z bodů. SVG se zkopíruje do schránky nebo stáhne jako soubor. Rozměry jdou přepnout mezi **px** a **mm**. |
 | Animace | `/animace/` ([`animace/`](animace/)) | Knihovna `<leaf-anim>` a ukázka animací lístečku, popis je v [`animace/README.md`](animace/README.md). |
 | Barvy | `/barvy/` ([`barvy/`](barvy/)) | Barvy loga a palety Primitives a Semantics z `.clr` souborů. Kliknutím se zkopíruje HEX nebo `rgb()`. |
 | Assety ke stažení | `/assety/` ([`assety/`](assety/)) | Tabulka assetů: ukázka, použité barvy a tlačítka Stáhnout SVG a Kopírovat SVG. |
@@ -37,7 +37,13 @@ node scripts/build-palette.js
 
 ## Spuštění
 
-Generátor tvarů stačí otevřít z `index.html`. Animace potřebují server (prohlížeč z disku nenačte moduly), proto spusť v kořeni projektu jakýkoli statický server:
+Generátor tvarů stačí otevřít z `index.html`. Animace potřebují server (prohlížeč z disku nenačte moduly), proto spusť v kořeni projektu lokální server. Doporučený je ten v repozitáři, který posílá `Cache-Control: no-store`:
+
+```bash
+node scripts/serve.js
+```
+
+Server poslouchá na IPv4 i IPv6 a když je port obsazený, řekne to a nespustí se (prohlížeč zkouší `localhost` nejdřív na IPv6, takže by ho jinak mohl zastínit starší server, který tam ještě běží; poznáš ho příkazem `lsof -nP -iTCP:8765 -sTCP:LISTEN`). Po úpravě kódu se tak nikdy nenačte starý skript (běžný `python3 -m http.server` nechává prohlížeč soubory cachovat a v Safari pak obnovení stránky načte nové HTML se starým `app.js`). Jde to i jakýmkoli jiným statickým serverem, třeba:
 
 ```bash
 python3 -m http.server 8765
@@ -63,9 +69,10 @@ Při nasazení workflow přidá k CSS, JS, faviconě a logu v HTML razítko `?v=
 
 Geometrie je v [`shape.js`](shape.js) (čistá funkce bez DOM).
 
-- Tvar je obdélník 10 : 9 (9 = výška), výška se nastavuje posuvníkem *Velikost* (výchozí 1000 px). Náhled na stránce se zmenšuje v jednom měřítku pro všechny velikosti: největší tvar se vejde na šířku, menší jsou úměrně menší. Skutečné měřítko je vidět pod náhledem („náhled 51 %“).
+- Tvar je obdélník 10 : 9 (9 = výška), výška se nastavuje posuvníkem *Velikost* (výchozí 750 px). Náhled „100 %“ má být stejně velký jako 100% zobrazení v Affinity. Jak velký je dokument v Affinity při 100 %, nezávisí na DPI dokumentu, ale na displeji, a prohlížeč displej nezná (CSS počítá 96 px na palec, což není skutečný palec). Proto je v „Dalším nastavení“ **Měřítko 100 % v Affinity**: kolikrát větší než v CSS je tvar v Affinity (výchozí 159 %, tedy 100 mm = 600 px displeje, ověřeno na tvarech 100 až 122 mm; 100 % by byla skutečná velikost, ne Affinity). Nastavení se pamatuje v prohlížeči i s přiblížením stránky, při jeho změně se přepočítá. Na jiném displeji ho případně uprav. Když se tvar do plochy nevejde, plocha se posouvá do strany. Tlačítko „Přizpůsobit oknu“ ho zmenší na šířku plochy, a to v jednom měřítku pro všechny velikosti (největší tvar se vejde, menší jsou úměrně menší). Skutečné měřítko je pod náhledem („náhled 100 %“). Šířka stránky je 1320 px, aby se výchozí tvar vešel ve 100 %.
 - Šest výřezů: svislý nahoře a dole (na ose x vycentrované), vodorovný vlevo a vpravo (posunuté od diagonálního výřezu) a dva protilehlé diagonální pod 45° z rohů vlevo nahoře a vpravo dole.
 - **Šířka výřezu** se zadává pro výšku 1000 px (nejvíc 25 px). Při poloviční výšce má výřez 75 % zadané šířky, při čtvrtinové 0,75² atd., mezi tím plynule (`šířka · (výška / 1000)^0,415`, funkce `cutWidthAt` v [`shape.js`](shape.js)). Vedle posuvníku je vidět i skutečná šířka při aktuální velikosti.
+- **Jednotky (zatím jen mm, přepínač px/mm je v `index.html` zakomentovaný):** přepínač v panelu mění zobrazení a posuvníky Velikost a Šířka výřezu a také export. Počítá se pořád v px (CSS px, 96 na palec, 1 mm = 3,7795 px) a rozměry se drží v px, takže přepnutí tam a zpět nic nezmění. Soubor v mm má `width` a `height` s příponou `mm` (např. `width="111.111mm" height="100mm"`) a souřadnice ve `viewBox` jsou v mm, takže 1 jednotka = 1 mm. V px soubor příponu nemá. Zvolená jednotka se pamatuje v prohlížeči. Výchozí šířka výřezu (pro plnou výšku 1000 px) je 23 px, v mm 5 mm. Dokud šířku výřezu neměníš, přepnutí jednotek přepne i na výchozí hodnotu druhé jednotky, potom už se jen přepočítá zobrazení.
 - **Hloubka** je jedna hodnota pro všech šest výřezů: špičky výřezů končí ve stejné vzdálenosti od středu. Táhlo se samo zastaví dřív, než by se výřezy srazily.
 - Zaoblení: konce výřezů jsou půlkruh, hlavní rohy bez diagonálního výřezu mají poloměr X, ostatní vnější rohy (ústí výřezů) 2·X. X je podíl výšky, takže se zaoblení s velikostí škáluje.
 - Obrys je jedna uzavřená cesta (`<path>`) s oblouky, výplň je jednobarevná a výřezy jsou průhledné.

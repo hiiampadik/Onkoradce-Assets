@@ -95,16 +95,46 @@ test('šířka výřezu: mezi poloviční a plnou výškou roste plynule a 25 px
   const widths = [500, 600, 700, 800, 900, 1000].map((height) => S.outline({ height, cutWidth: 25 }).params.cutWidth);
   for (let i = 1; i < widths.length; i++) assert.ok(widths[i] > widths[i - 1]);
   assert.equal(widths[widths.length - 1], 25);
-  assert.equal(S.outline({ cutWidth: 25 }).params.cutWidth, 25, 'výchozí výška je 1000 px');
+  assert.equal(S.outline({ height: 1000, cutWidth: 25 }).params.cutWidth, 25, 'při 1000 px platí zadaná šířka');
 });
 
-test('výchozí velikost je 1000 px', () => {
-  assert.equal(S.DEFAULTS.height, 1000);
-  assert.equal(S.outline().height, 1000);
+test('výchozí šířka výřezu v mm je 5 mm při plné velikosti (1000 px) a vejde se na posuvník', () => {
+  const cutPx = S.DEFAULT_CUT_MM / S.MM_PER_PX;
+  const o = S.outline({ height: S.REF_HEIGHT, cutWidth: cutPx });
+  assert.ok(Math.abs(o.params.cutWidth * S.MM_PER_PX - 5) < 1e-9);
+  const mm = S.svg({ height: S.REF_HEIGHT, cutWidth: cutPx }, 'mm');
+  assert.equal(S.DEFAULT_CUT_MM, 5);
+  assert.ok(!/NaN/.test(mm));
+  assert.ok(cutPx >= 4 && cutPx <= 25, 'v rozsahu posuvníku v px');
+});
+
+test('affinityScale: kalibrace 100 % podle Affinity se při změně přiblížení stránky přepočítá', () => {
+  const z = S.DEFAULT_AFFINITY_ZOOM;
+  assert.equal(z, 6 * 25.4 / 96);
+  assert.equal(S.affinityScale(z, 2, 2), z, 'stejný displej: zoom beze změny');
+  assert.equal(S.affinityScale(z, 4, 2), z / 2, 'stránka přiblížená na 200 %: tvar v CSS px poloviční, na displeji stejně velký');
+  assert.equal(S.affinityScale(z, 1, 2), z * 2);
+  assert.equal(S.affinityScale(1.5), 1.5, 'bez dpr se bere 1');
+  // údaj uživatele: 100 mm je v Affinity při 100 % 600 px displeje
+  assert.ok(Math.abs(100 / S.MM_PER_PX * z - 600) < 1e-9);
+  // naměřeno ze screenshotů s vloženým tvarem (body = CSS px): v Affinity při 100 % má výška 122 mm 727,7,
+  // 110 mm 658,3, 100,5 mm 599,5 a 100 mm 596,6 bodů. Měření na screenshotu je přesné na pár bodů, proto
+  // tolerance 0,7 %; hodnota z údaje uživatele (600 px) je o 0,5 % vyšší než průměr měření.
+  for (const [mm, affinityPoints] of [[122, 727.7], [110, 658.3], [100.5, 599.5], [100, 596.6]]) {
+    const expected = mm / S.MM_PER_PX * z;
+    assert.ok(Math.abs(expected - affinityPoints) / affinityPoints < 0.007, `${mm} mm: ${expected} vs ${affinityPoints}`);
+  }
+});
+
+test('výchozí velikost je 750 px a hloubka 70 %', () => {
+  assert.equal(S.DEFAULTS.height, 750);
+  assert.equal(S.outline().height, 750);
+  assert.equal(S.DEFAULTS.depth, 0.7);
+  assert.ok(S.maxDepth() >= S.DEFAULTS.depth, 'výchozí hloubka se vejde do limitu');
 });
 
 test('konce výřezů jsou půlkruh (poloměr = polovina šířky)', () => {
-  const o = S.outline({ cutWidth: 9 });
+  const o = S.outline({ height: 1000, cutWidth: 9 });
   const tips = o.corners.filter((c) => Math.abs(c.r - 4.5) < 1e-9);
   assert.equal(tips.length, 12);
 });
@@ -263,4 +293,73 @@ test('výchozí body leží uvnitř tvaru a je jich v rozsahu povoleného počtu
     assert.ok(p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1);
     assert.ok(p.size >= S.GLOW_SIZE.min && p.size <= S.GLOW_SIZE.max);
   }
+});
+
+/* ───────────── export v milimetrech ───────────── */
+
+// Cesta jako seznam příkazů; u oblouku A se příznaky (rotace, large-arc, sweep) nepřepočítávají.
+function parsePath(d) {
+  return [...d.matchAll(/([MLAZ])([^MLAZ]*)/g)].map((m) => ({ cmd: m[1], args: m[2].split(/[ ,]+/).filter(Boolean).map(Number) }));
+}
+
+function assertMmPathMatchesPx(dMm, dPx, k) {
+  const a = parsePath(dMm), b = parsePath(dPx);
+  assert.equal(a.length, b.length);
+  a.forEach((seg, i) => {
+    assert.equal(seg.cmd, b[i].cmd);
+    seg.args.forEach((v, j) => {
+      const isFlag = seg.cmd === 'A' && j >= 2 && j <= 4;
+      const expected = isFlag ? b[i].args[j] : b[i].args[j] * k;
+      assert.ok(Math.abs(v - expected) < 0.002, `${seg.cmd}[${j}]: ${v} vs ${expected}`);
+    });
+  });
+}
+
+test('svg v mm: width a height mají příponu mm, souřadnice jsou v mm a odpovídají px × 25,4 / 96', () => {
+  const params = { height: 400 };
+  const mm = S.svg(params, 'mm');
+  const px = S.svg(params);
+  const k = 25.4 / 96;
+  assert.equal(S.MM_PER_PX, k);
+  const head = mm.match(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="([\d.]+)mm" height="([\d.]+)mm" viewBox="0 0 ([\d.]+) ([\d.]+)">/);
+  assert.ok(head, mm.slice(0, 160));
+  const o = S.outline(params);
+  assert.ok(Math.abs(+head[1] - o.width * k) < 0.001);
+  assert.ok(Math.abs(+head[2] - o.height * k) < 0.001);
+  assert.equal(head[3], head[1], 'viewBox má stejná čísla jako width, takže 1 jednotka = 1 mm');
+  assert.equal(head[4], head[2]);
+  assertMmPathMatchesPx(mm.match(/ d="([^"]+)"/)[1], px.match(/ d="([^"]+)"/)[1], k);
+  assert.ok(!/NaN/.test(mm));
+});
+
+test('svg v mm: výška 100 mm se zapíše jako 100mm', () => {
+  const svg = S.svg({ height: 100 / S.MM_PER_PX }, 'mm');
+  assert.match(svg, / height="100mm" /);
+  assert.match(svg, /width="111\.111mm"/);
+});
+
+test('svg bez zadané jednotky nebo s px zůstává beze změny a bez přípony', () => {
+  assert.equal(S.svg({ height: 400 }, 'px'), S.svg({ height: 400 }));
+  assert.ok(!/mm/.test(S.svg({ height: 400 })));
+  assert.ok(!/mm/.test(S.glowSvg({ height: 400 }, S.DEFAULT_GLOW)));
+});
+
+test('glowSvg v mm: ořez i středy a poloměry záře jsou přepočtené do mm', () => {
+  const params = { height: 400 };
+  const k = S.MM_PER_PX;
+  const mm = S.glowSvg(params, S.DEFAULT_GLOW, 'mm');
+  const px = S.glowSvg(params, S.DEFAULT_GLOW);
+  assert.match(mm, /^<svg [^>]*width="[\d.]+mm" height="[\d.]+mm" viewBox="0 0 [\d.]+ [\d.]+">/);
+  const a = glowParts(mm), b = glowParts(px);
+  assertMmPathMatchesPx(a.clipPath[2], b.clipPath[2], k);
+  assert.equal(a.circles.length, b.circles.length);
+  a.circles.forEach((c, i) => {
+    for (const j of [1, 2, 3]) assert.ok(Math.abs(+c[j] - +b.circles[i][j] * k) < 0.002, `kruh ${i} hodnota ${j}`);
+  });
+  a.gradients.forEach((g, i) => {
+    const attr = (name) => +(g[2].match(new RegExp(' ' + name + '="([^"]+)"')) || [])[1];
+    assert.equal(attr('cx'), +a.circles[i][1]);
+    assert.equal(attr('cy'), +a.circles[i][2]);
+    assert.equal(attr('r'), +a.circles[i][3]);
+  });
 });

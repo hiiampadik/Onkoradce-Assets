@@ -33,10 +33,24 @@
         <div id="glow-handles" class="glow-handles"></div>
       </div>
 
-      <p class="dims" id="dims"></p>
+      <div class="stage-foot">
+        <p class="dims" id="dims"></p>
+        <button type="button" id="fit" class="link"></button>
+      </div>
     </section>
 
     <form class="panel" id="controls" aria-label="Nastavení tvaru" onsubmit="return false">
+      <!-- Přepínač jednotek je zatím vypnutý, používají se jen mm. Pro návrat px ho odkomentuj
+           (a v app.js řádek s načtením jednotky z localStorage).
+      <div class="field field-inline">
+        <span class="field-title">Jednotky</span>
+        <div class="units" role="group" aria-label="Jednotky rozměrů">
+          <button type="button" class="unit" data-unit="px" aria-pressed="false">px</button>
+          <button type="button" class="unit" data-unit="mm" aria-pressed="true">mm</button>
+        </div>
+      </div>
+      -->
+
       <div class="field">
         <div class="field-head">
           <label for="depth">Hloubka výřezů</label>
@@ -91,7 +105,7 @@
               <output id="cutWidth-out" for="cutWidth"></output>
             </div>
             <input id="cutWidth" type="range" min="4" max="25" step="0.5">
-            <p class="note">Platí pro výšku 1000 px. Při poloviční výšce je výřez 75 % široký, při čtvrtinové 56 % atd.</p>
+            <p class="note" id="cut-note"></p>
           </div>
 
           <div class="field">
@@ -109,6 +123,15 @@
               <output id="offset-out" for="offset"></output>
             </div>
             <input id="offset" type="range" min="0" max="12" step="0.1">
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <label for="affZoom">Velikost v Affinity oproti skutečné (%)</label>
+              <output id="affZoom-out" for="affZoom"></output>
+            </div>
+            <input id="affZoom" type="number" min="20" max="1000" step="1" inputmode="numeric">
+            <p class="note">Kolikrát je tvar při 100 % v Affinity větší než skutečná velikost (96 px na palec). Výchozí 159 % znamená, že 100 mm je v Affinity při 100 % 600 px displeje, podle toho je velký náhled „100 %“. Mění se jen když se náhled liší. „Obnovit výchozí hodnoty“ ho vrátí.</p>
           </div>
         </div>
       </details>

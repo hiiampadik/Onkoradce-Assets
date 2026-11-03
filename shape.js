@@ -23,10 +23,13 @@
   var REF_HEIGHT = 1000;
   var CUT_SCALE_PER_HALVING = 0.75;
 
+  // Výchozí šířka výřezu při zobrazení v mm (pro výšku REF_HEIGHT), v px je to DEFAULTS.cutWidth.
+  var DEFAULT_CUT_MM = 5;
+
   var DEFAULTS = {
-    height: REF_HEIGHT,   // px; šířka = height · aspect
+    height: 750,      // px; šířka = height · aspect
     aspect: 10 / 9,
-    depth: 0.8,       // 0–1: do jaké části vzdálenosti okraj→střed výřezy zasahují
+    depth: 0.7,        // 0–1: do jaké části vzdálenosti okraj→střed výřezy zasahují
     cutWidth: 23,     // px při výšce REF_HEIGHT; při jiné výšce se přepočte (cutWidthAt)
     radius: 0.05,     // X jako podíl výšky
     offset: 0.075,    // posun vodorovných výřezů od středu jako podíl výšky
@@ -276,31 +279,74 @@
     return { corners: corners, width: g.width, height: g.height, params: p };
   }
 
-  function fmt(v) {
-    var s = (Math.round(v * 100) / 100).toString();
+  // Počet desetinných míst ve výstupu (výchozí 2).
+  function fmt(v, digits) {
+    var f = Math.pow(10, digits === undefined ? 2 : digits);
+    var s = (Math.round(v * f) / f).toString();
     return s === '-0' ? '0' : s;
   }
 
-  function pathData(o) {
+  function pathData(o, digits) {
     var cs = o.corners;
-    var d = 'M' + fmt(cs[0].t2.x) + ' ' + fmt(cs[0].t2.y);
+    var d = 'M' + fmt(cs[0].t2.x, digits) + ' ' + fmt(cs[0].t2.y, digits);
     for (var i = 1; i <= cs.length; i++) {
       var c = cs[i % cs.length];
-      d += 'L' + fmt(c.t1.x) + ' ' + fmt(c.t1.y);
+      d += 'L' + fmt(c.t1.x, digits) + ' ' + fmt(c.t1.y, digits);
       if (c.r > 0) {
-        d += 'A' + fmt(c.r) + ' ' + fmt(c.r) + ' 0 0 ' + c.sweep + ' ' + fmt(c.t2.x) + ' ' + fmt(c.t2.y);
+        d += 'A' + fmt(c.r, digits) + ' ' + fmt(c.r, digits) + ' 0 0 ' + c.sweep + ' ' +
+          fmt(c.t2.x, digits) + ' ' + fmt(c.t2.y, digits);
       }
     }
     return d + 'Z';
   }
 
-  function svg(input) {
-    var o = outline(input);
-    var w = fmt(o.width);
-    var h = fmt(o.height);
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
+  /*
+   * Jednotky exportu. Tvar se počítá v px (CSS px, 96 na palec), do milimetrů se
+   * přepočte až na výstupu. V režimu mm je jedna jednotka souřadnic SVG 1 mm a
+   * width/height nesou příponu mm, takže se soubor otevře ve skutečné velikosti.
+   */
+  var MM_PER_PX = 25.4 / 96;
+
+  /*
+   * Velikost náhledu „100 %“ podle Affinity. Velikost dokumentu na displeji při 100 % nezávisí na DPI
+   * dokumentu, ale na displeji, a prohlížeč ji nezná (CSS počítá 96 px na palec, což není skutečný palec).
+   * Proto je to kalibrace: zoom říká, kolikrát větší než v CSS je tvar v Affinity při 100 %. Naměřeno
+   * ze screenshotů s vloženými tvary (122, 111, 110 a 100,5 mm: v Affinity 1,578× až 1,584× větší než v CSS) a z údaje uživatele „100 mm = 600 px na obrazovce“ (1,5875×), pak se dá upravit ručně.
+   * Zoom platí pro displej s dpr calibDpr; při jiném dpr (přiblížení stránky) se přepočte, aby tvar
+   * zůstal na displeji stejně velký jako v Affinity.
+   */
+  var DEFAULT_AFFINITY_ZOOM = 6 * 25.4 / 96; // 1,5875: 100 mm je v Affinity při 100 % 600 px displeje
+
+  function affinityScale(zoom, dpr, calibDpr) {
+    var now = dpr || 1;
+    return zoom * (calibDpr || now) / now;
+  }
+
+  function unitInfo(unit) {
+    return unit === 'mm' ? { k: MM_PER_PX, suffix: 'mm', digits: 3 } : { k: 1, suffix: '', digits: 2 };
+  }
+
+  // Obrys v jiné jednotce (k = nová jednotka na px): souřadnice i poloměry.
+  function scaleOutline(o, k) {
+    function pt(p) { return { x: p.x * k, y: p.y * k }; }
+    return {
+      corners: o.corners.map(function (c) {
+        return { t1: pt(c.t1), t2: pt(c.t2), r: c.r * k, sweep: c.sweep, c: pt(c.c) };
+      }),
+      width: o.width * k,
+      height: o.height * k,
+      params: o.params
+    };
+  }
+
+  function svg(input, unit) {
+    var u = unitInfo(unit);
+    var o = scaleOutline(outline(input), u.k);
+    var w = fmt(o.width, u.digits);
+    var h = fmt(o.height, u.digits);
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + u.suffix + '" height="' + h + u.suffix +
       '" viewBox="0 0 ' + w + ' ' + h + '">' +
-      '<path fill="' + o.params.color + '" d="' + pathData(o) + '"/></svg>';
+      '<path fill="' + o.params.color + '" d="' + pathData(o, u.digits) + '"/></svg>';
   }
 
   /*
@@ -357,21 +403,22 @@
     return (h >>> 0).toString(36);
   }
 
-  function glowSvg(input, points) {
-    var o = outline(input);
+  function glowSvg(input, points, unit) {
+    var u = unitInfo(unit);
+    var o = scaleOutline(outline(input), u.k);
     var pts = normalizeGlow(points);
-    var d = pathData(o);
+    var d = pathData(o, u.digits);
     var id = hash(d + JSON.stringify(pts));
-    var w = fmt(o.width);
-    var h = fmt(o.height);
+    var w = fmt(o.width, u.digits);
+    var h = fmt(o.height, u.digits);
 
     var defs = '<clipPath id="shape-' + id + '"><path d="' + d + '"/></clipPath>';
     var circles = '';
     pts.forEach(function (p, i) {
       var gid = 'glow-' + id + '-' + i;
-      var cx = fmt(p.x * o.width);
-      var cy = fmt(p.y * o.height);
-      var r = fmt(p.size * o.height);
+      var cx = fmt(p.x * o.width, u.digits);
+      var cy = fmt(p.y * o.height, u.digits);
+      var r = fmt(p.size * o.height, u.digits);
       // Střed a poloměr přechodu jsou zapsané výslovně v souřadnicích SVG. Affinity při
       // vložení nezná výchozí hodnoty (50 % obdélníku kruhu) a vykreslí tvrdé kruhy.
       defs += '<radialGradient id="' + gid + '" gradientUnits="userSpaceOnUse" cx="' + cx + '" cy="' + cy +
@@ -381,7 +428,7 @@
       circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#' + gid + ')"/>';
     });
 
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + u.suffix + '" height="' + h + u.suffix +
       '" viewBox="0 0 ' + w + ' ' + h + '">' +
       '<defs>' + defs + '</defs>' +
       '<g clip-path="url(#shape-' + id + ')">' + circles + '</g></svg>';
@@ -390,6 +437,10 @@
   var api = {
     DEFAULTS: DEFAULTS,
     REF_HEIGHT: REF_HEIGHT,
+    DEFAULT_CUT_MM: DEFAULT_CUT_MM,
+    DEFAULT_AFFINITY_ZOOM: DEFAULT_AFFINITY_ZOOM,
+    affinityScale: affinityScale,
+    MM_PER_PX: MM_PER_PX,
     cutWidthAt: cutWidthAt,
     DEFAULT_GLOW: DEFAULT_GLOW,
     NEW_GLOW_COLORS: NEW_GLOW_COLORS,

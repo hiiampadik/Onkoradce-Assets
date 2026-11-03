@@ -39,8 +39,9 @@
   min-height: 520px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start; /* tvar se vystředí přes margin: auto, aby se při přetečení nezřízl zleva */
   justify-content: center;
+  overflow-x: auto;
   gap: var(--space-stack);
   padding: 48px var(--space-card);
   /* šachovnice, aby bylo vidět, že výřezy jsou průhledné */
@@ -57,7 +58,8 @@
 
 .shape {
   display: block;
-  max-width: 100%;
+  flex: none;
+  margin-inline: auto;
   padding: 0;
   border: 0;
   background: none;
@@ -73,6 +75,15 @@
   display: block;
   width: 100%;
   height: auto;
+}
+
+.stage-foot {
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px var(--space-stack);
 }
 
 .dims {
@@ -123,8 +134,30 @@ input[type="range"] {
 
 .note { margin: 0; font-size: 0.8rem; color: var(--muted); }
 
-/* Přepínač druhu tvaru */
-.modes {
+.stale-banner {
+  max-width: var(--page-max);
+  margin: var(--space-stack) auto 0;
+  padding: 12px var(--space-card);
+  border: 1px solid #f0d78c;
+  border-radius: var(--radius-card);
+  background: #fff3cd;
+  color: #5c4400;
+}
+
+input[type="number"] {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Přepínače: druh tvaru nahoře a jednotky v panelu */
+.modes,
+.units {
   display: inline-flex;
   gap: 2px;
   margin-top: var(--space-stack);
@@ -134,7 +167,8 @@ input[type="range"] {
   background: var(--card);
 }
 
-.mode {
+.mode,
+.unit {
   padding: 7px 14px;
   border: 0;
   border-radius: 9px;
@@ -145,8 +179,13 @@ input[type="range"] {
   font-weight: 600;
   cursor: pointer;
 }
-.mode:hover { color: var(--ink); }
-.mode[aria-pressed="true"] { background: var(--green); color: #fff; }
+.mode:hover,
+.unit:hover { color: var(--ink); }
+.mode[aria-pressed="true"],
+.unit[aria-pressed="true"] { background: var(--green); color: #fff; }
+
+.units { margin: 0 0 0 auto; }
+.unit { padding: 4px 12px; font-size: 0.85rem; }
 
 .btn.small { padding: 5px 10px; font-size: 0.85rem; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -155,8 +194,8 @@ input[type="range"] {
 /* Maska se září: náhled s body, které se dají tahat myší */
 .glow {
   position: relative;
-  width: fit-content;
-  max-width: 100%;
+  flex: none;
+  margin-inline: auto;
 }
 
 .glow-art svg {

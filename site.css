@@ -12,7 +12,7 @@
   --green: #009355;         /* hlavní barva webu (generátor i animace) */
   --green-dark: #007a46;
 
-  --page-max: 1180px;       /* šířka obsahu i hlavičky */
+  --page-max: 1320px;       /* šířka obsahu i hlavičky; do 1320 se vejde náhled generátoru ve 100 % */
   --space-page: 24px;       /* okraj stránky vlevo a vpravo */
   --space-section: 24px;    /* mezera mezi bloky (karty, nadpis → obsah) */
   --space-card: 20px;       /* vnitřní okraj karty */
