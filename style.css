@@ -71,7 +71,7 @@
 
 .shape svg {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
 }
 
@@ -161,7 +161,7 @@ input[type="range"] {
 
 .glow-art svg {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
 }
 
@@ -268,7 +268,8 @@ input[type="range"] {
 }
 
 @media (max-width: 820px) {
-  .layout { grid-template-columns: 1fr; }
+  /* minmax(0, …): sloupec se smí zúžit pod šířku náhledu, ten se pak přepočítá */
+  .layout { grid-template-columns: minmax(0, 1fr); }
   .stage { min-height: 320px; padding: var(--space-card); }
 }
 

@@ -24,6 +24,7 @@
     copy: $('copy'),
     download: $('download'),
     reset: $('reset'),
+    glow: $('glow'),
     glowArt: $('glow-art'),
     glowHandles: $('glow-handles'),
     glowChips: $('glow-chips'),
@@ -45,6 +46,7 @@
   // mode: 'solid' (jednobarevný tvar) nebo 'glow' (maska se září z bodů)
   var state = { mode: 'solid', points: [], selected: 0 };
   var current = { svg: '', width: 0, height: 0 };
+  var availWidth = 0; // šířka, kterou má náhled ve stagi k dispozici
 
   function setDefaults() {
     el.depth.value = Math.round(D.depth * 100);
@@ -68,6 +70,19 @@
     };
   }
 
+  function measureStage() {
+    var cs = getComputedStyle(el.stage);
+    availWidth = el.stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  }
+
+  // Náhled se zmenšuje v jednom měřítku pro všechny velikosti: největší tvar (konec posuvníku
+  // Velikost) se vejde na šířku stagi a menší jsou úměrně menší. Kdyby se každý tvar vtěsnával
+  // do stagi zvlášť, vypadaly by všechny velké velikosti stejně.
+  function previewScale() {
+    if (availWidth <= 0) return 1; // stránka ještě nemá rozměry (skrytý panel), dopočítá se při změně velikosti
+    return Math.min(1, availWidth / (+el.size.max * D.aspect));
+  }
+
   function render() {
     var params = read();
     // Hloubku omezuje to, aby se výřezy nesrazily – táhlo se tomu přizpůsobí.
@@ -87,12 +102,15 @@
     current.width = o.width;
     current.height = o.height;
 
+    var scale = previewScale();
+    el.shape.style.width = el.glow.style.width = o.width * scale + 'px';
+
     out.depth.textContent = el.depth.value + ' %';
     out.size.textContent = el.size.value + ' px';
-    out.cutWidth.textContent = round(params.cutWidth) + ' px';
+    out.cutWidth.textContent = round(params.cutWidth) + ' px · teď ' + round(o.params.cutWidth) + ' px';
     out.radius.textContent = round(params.radius * 100) + ' % (' + round(params.radius * params.height) + ' px)';
     out.offset.textContent = round(params.offset * 100) + ' %';
-    el.dims.textContent = Math.round(o.width) + ' × ' + Math.round(o.height) + ' px';
+    el.dims.textContent = Math.round(o.width) + ' × ' + Math.round(o.height) + ' px · náhled ' + Math.round(scale * 100) + ' %';
   }
 
   /* ───────────── Body záře ───────────── */
@@ -320,6 +338,16 @@
     renderPoints();
   });
 
+  // Při změně šířky okna se náhled přepočítá (jen šířka, ať se to nezacyklí s výškou stagi).
+  var lastStageWidth = 0;
+  new ResizeObserver(function () {
+    if (el.stage.clientWidth === lastStageWidth) return;
+    lastStageWidth = el.stage.clientWidth;
+    measureStage();
+    render();
+  }).observe(el.stage);
+
+  measureStage();
   setDefaults();
   renderPoints();
   setMode(location.hash === '#zare' ? 'glow' : 'solid');

@@ -63,9 +63,9 @@ Při nasazení workflow přidá k CSS, JS, faviconě a logu v HTML razítko `?v=
 
 Geometrie je v [`shape.js`](shape.js) (čistá funkce bez DOM).
 
-- Tvar je obdélník 10 : 9 (9 = výška), výška se nastavuje posuvníkem *Velikost*.
+- Tvar je obdélník 10 : 9 (9 = výška), výška se nastavuje posuvníkem *Velikost* (výchozí 1000 px). Náhled na stránce se zmenšuje v jednom měřítku pro všechny velikosti: největší tvar se vejde na šířku, menší jsou úměrně menší. Skutečné měřítko je vidět pod náhledem („náhled 51 %“).
 - Šest výřezů: svislý nahoře a dole (na ose x vycentrované), vodorovný vlevo a vpravo (posunuté od diagonálního výřezu) a dva protilehlé diagonální pod 45° z rohů vlevo nahoře a vpravo dole.
-- **Šířka výřezu je absolutní** – při zvětšení nebo zmenšení tvaru se nemění.
+- **Šířka výřezu** se zadává pro výšku 1000 px (nejvíc 25 px). Při poloviční výšce má výřez 75 % zadané šířky, při čtvrtinové 0,75² atd., mezi tím plynule (`šířka · (výška / 1000)^0,415`, funkce `cutWidthAt` v [`shape.js`](shape.js)). Vedle posuvníku je vidět i skutečná šířka při aktuální velikosti.
 - **Hloubka** je jedna hodnota pro všech šest výřezů: špičky výřezů končí ve stejné vzdálenosti od středu. Táhlo se samo zastaví dřív, než by se výřezy srazily.
 - Zaoblení: konce výřezů jsou půlkruh, hlavní rohy bez diagonálního výřezu mají poloměr X, ostatní vnější rohy (ústí výřezů) 2·X. X je podíl výšky, takže se zaoblení s velikostí škáluje.
 - Obrys je jedna uzavřená cesta (`<path>`) s oblouky, výplň je jednobarevná a výřezy jsou průhledné.
@@ -74,7 +74,7 @@ Geometrie je v [`shape.js`](shape.js) (čistá funkce bez DOM).
 
 Varianta, kde tvar nemá vlastní barvu a slouží jen jako maska (`ShapeGen.glowSvg`).
 
-- Každý bod záře je kruh s radiálním přechodem, který se od plné barvy uprostřed vytrácí do průhledna. Všechny kruhy jsou ořezané obrysem tvaru (`<clipPath>`). Je to čisté SVG bez filtrů a bez rastru.
+- Každý bod záře je kruh s radiálním přechodem, který se od plné barvy uprostřed vytrácí do průhledna. Všechny kruhy jsou ořezané obrysem tvaru (`<clipPath>`). Je to čisté SVG bez filtrů a bez rastru. Střed a poloměr každého přechodu jsou zapsané výslovně (`gradientUnits="userSpaceOnUse"`): bez nich Affinity při vložení kreslí tvrdé kruhy. Vložení do Affinity jsem ověřil, přechody se vykreslí hladce.
 - Bod má polohu (podíl šířky a výšky tvaru), poloměr záře (podíl výšky) a barvu. Díky podílům se záře při změně velikosti tvaru zmenšuje a zvětšuje spolu s ním.
 - Později přidaný bod se kreslí přes dřívější, takže barvy se na sebe vrství (zelená je podklad, žlutá a modrá ho přebarvují, bílá zesvětluje).
 - Body se v náhledu tahají myší. Označený bod se dá posouvat šipkami (Shift = větší krok) a Delete ho odebere. Dvojklik do tvaru nebo tlačítko přidá další bod, nejvýš 12. Barva a velikost záře se mění v panelu.

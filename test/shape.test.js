@@ -72,17 +72,35 @@ test('tvar má poměr 10:9 a obrys vyplňuje celý obdélník', () => {
   }
 });
 
-test('šířka výřezu se se zvětšením tvaru nemění', () => {
-  for (const height of [200, 400, 800]) {
-    const o = S.outline({ height, cutWidth: 9 });
-    const pts = flatten(o);
-    const y = o.params.depth * o.height / 2 / 2; // v polovině hloubky horního svislého výřezu
-    const xs = rowCrossings(pts, y);
-    const cx = o.width / 2;
-    const left = Math.max(...xs.filter((x) => x < cx));
-    const right = Math.min(...xs.filter((x) => x > cx));
-    assert.ok(Math.abs(right - left - 9) < 1e-6, `výška ${height}: ${right - left}`);
+// Skutečná šířka horního svislého výřezu v obrysu (v polovině jeho hloubky).
+function measuredCutWidth(params) {
+  const o = S.outline(params);
+  const y = o.params.depth * o.height / 2 / 2;
+  const xs = rowCrossings(flatten(o), y);
+  const cx = o.width / 2;
+  const left = Math.max(...xs.filter((x) => x < cx));
+  const right = Math.min(...xs.filter((x) => x > cx));
+  return right - left;
+}
+
+test('šířka výřezu: při 1000 px je zadaná, při poloviční výšce 75 %, při čtvrtinové 0,75² atd.', () => {
+  const near = (a, b) => Math.abs(a - b) < 1e-6;
+  for (const [height, factor] of [[1000, 1], [500, 0.75], [250, 0.75 ** 2], [125, 0.75 ** 3], [2000, 1 / 0.75]]) {
+    assert.ok(near(S.cutWidthAt(height, 25), 25 * factor), `cutWidthAt(${height})`);
+    assert.ok(near(measuredCutWidth({ height, cutWidth: 25 }), 25 * factor), `obrys při ${height} px`);
   }
+});
+
+test('šířka výřezu: mezi poloviční a plnou výškou roste plynule a 25 px je povolených', () => {
+  const widths = [500, 600, 700, 800, 900, 1000].map((height) => S.outline({ height, cutWidth: 25 }).params.cutWidth);
+  for (let i = 1; i < widths.length; i++) assert.ok(widths[i] > widths[i - 1]);
+  assert.equal(widths[widths.length - 1], 25);
+  assert.equal(S.outline({ cutWidth: 25 }).params.cutWidth, 25, 'výchozí výška je 1000 px');
+});
+
+test('výchozí velikost je 1000 px', () => {
+  assert.equal(S.DEFAULTS.height, 1000);
+  assert.equal(S.outline().height, 1000);
 });
 
 test('konce výřezů jsou půlkruh (poloměr = polovina šířky)', () => {
@@ -132,7 +150,7 @@ test('obrys se nikdy nekříží – celý rozsah táhel a velikostí', () => {
     for (const radius of [0, 0.05, 0.1])
       for (const offset of [0, 0.075, 0.12])
         for (const height of [100, 400, 1000])
-          for (const cutWidth of [4, 9, 20])
+          for (const cutWidth of [4, 9, 20, 25])
             grid.push({ depth, radius, offset, height, cutWidth });
   for (const params of grid) {
     const o = S.outline(params);
@@ -155,7 +173,7 @@ const paletteHexes = new Set(palette.primitives.map((c) => c.hex));
 function glowParts(svg) {
   return {
     clipPath: (svg.match(/<clipPath id="([^"]+)"><path d="([^"]+)"\/><\/clipPath>/) || []),
-    gradients: [...svg.matchAll(/<radialGradient id="([^"]+)">(.*?)<\/radialGradient>/g)],
+    gradients: [...svg.matchAll(/<radialGradient id="([^"]+)"([^>]*)>(.*?)<\/radialGradient>/g)],
     circles: [...svg.matchAll(/<circle cx="([^"]+)" cy="([^"]+)" r="([^"]+)" fill="url\(#([^)]+)\)"\/>/g)]
   };
 }
@@ -187,6 +205,20 @@ test('glowSvg: jiný obsah dostane jiná id (víc SVG na jedné stránce se nep�
   assert.equal(glowParts(a).clipPath[1], glowParts(S.glowSvg({}, S.DEFAULT_GLOW)).clipPath[1]);
 });
 
+test('glowSvg: přechod má střed a poloměr zapsané výslovně a shodné s kruhem (Affinity jinak kreslí tvrdé kruhy)', () => {
+  const { gradients, circles } = glowParts(S.glowSvg({ height: 300 }, S.DEFAULT_GLOW));
+  assert.equal(gradients.length, circles.length);
+  gradients.forEach((g, i) => {
+    const attr = (name) => (g[2].match(new RegExp(' ' + name + '="([^"]+)"')) || [])[1];
+    assert.equal(attr('gradientUnits'), 'userSpaceOnUse');
+    assert.equal(attr('cx'), circles[i][1]);
+    assert.equal(attr('cy'), circles[i][2]);
+    assert.equal(attr('r'), circles[i][3]);
+    assert.equal(circles[i][4], g[1]);
+    assert.ok(/<stop [^>]*stop-opacity="1"/.test(g[3]) && /<stop [^>]*stop-opacity="0"\/>$/.test(g[3]), 'průhlednost je u každého zlomu zapsaná');
+  });
+});
+
 test('glowSvg: poloha a velikost se počítají z rozměrů tvaru, takže se škálují s výškou', () => {
   const pt = [{ x: 0.5, y: 0.25, color: '#ffffff', size: 0.5 }];
   for (const height of [200, 400, 800]) {
@@ -209,7 +241,7 @@ test('normalizeGlow: ořízne polohu a velikost, opraví barvu a omezí počet b
 
 test('glowSvg: přechod ubývá od plné barvy do průhledna, přesně do poloměru', () => {
   const [g] = glowParts(S.glowSvg({}, [{ x: 0.5, y: 0.5, color: '#ADF0C1', size: 0.5 }])).gradients;
-  const stops = [...g[2].matchAll(/<stop offset="([^"]+)" stop-color="([^"]+)"(?: stop-opacity="([^"]+)")?\/>/g)]
+  const stops = [...g[3].matchAll(/<stop offset="([^"]+)" stop-color="([^"]+)"(?: stop-opacity="([^"]+)")?\/>/g)]
     .map((m) => ({ offset: +m[1], color: m[2], opacity: m[3] === undefined ? 1 : +m[3] }));
   assert.equal(stops[0].offset, 0);
   assert.equal(stops[0].opacity, 1);

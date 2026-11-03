@@ -18,11 +18,16 @@
   var SQRT2 = Math.SQRT2;
   var EPS = 1e-9;
 
+  // Šířka výřezu se zadává pro tvar vysoký REF_HEIGHT. Při poloviční výšce má výřez
+  // 75 % zadané šířky, při čtvrtinové 0,75² atd. (viz cutWidthAt).
+  var REF_HEIGHT = 1000;
+  var CUT_SCALE_PER_HALVING = 0.75;
+
   var DEFAULTS = {
-    height: 400,      // px; šířka = height · aspect
+    height: REF_HEIGHT,   // px; šířka = height · aspect
     aspect: 10 / 9,
-    depth: 0.62,      // 0–1: do jaké části vzdálenosti okraj→střed výřezy zasahují
-    cutWidth: 9,      // px; absolutní, nezávisí na velikosti tvaru
+    depth: 0.8,       // 0–1: do jaké části vzdálenosti okraj→střed výřezy zasahují
+    cutWidth: 23,     // px při výšce REF_HEIGHT; při jiné výšce se přepočte (cutWidthAt)
     radius: 0.05,     // X jako podíl výšky
     offset: 0.075,    // posun vodorovných výřezů od středu jako podíl výšky
     color: '#149B58'  // green/500 z palety, aby šla barva vybrat ve vzorníku
@@ -32,6 +37,14 @@
     return Math.min(hi, Math.max(lo, v));
   }
 
+  // Šířka výřezu při dané výšce tvaru: refWidth platí pro REF_HEIGHT, při každém
+  // zmenšení výšky na polovinu klesne na 75 % (mocninná funkce, plynule i mezi tím).
+  function cutWidthAt(height, refWidth) {
+    return refWidth * Math.pow(height / REF_HEIGHT, Math.log(CUT_SCALE_PER_HALVING) / Math.log(0.5));
+  }
+
+  // Očekává „surové“ vstupy. cutWidth na vstupu je šířka pro REF_HEIGHT, ve výstupu
+  // je to už šířka v px pro zadanou výšku, proto se výstup nesmí normalizovat znovu.
   function normalize(input) {
     var p = {};
     var k;
@@ -39,7 +52,7 @@
     for (k in (input || {})) if (input[k] !== undefined) p[k] = input[k];
     p.height = clamp(+p.height, 20, 20000);
     p.depth = clamp(+p.depth, 0.05, 0.92);
-    p.cutWidth = clamp(+p.cutWidth, 0.5, p.height / 10);
+    p.cutWidth = clamp(cutWidthAt(p.height, +p.cutWidth), 0.5, p.height / 10);
     p.radius = clamp(+p.radius, 0, 0.2);
     p.offset = clamp(+p.offset, 0, 0.2);
     return p;
@@ -356,12 +369,16 @@
     var circles = '';
     pts.forEach(function (p, i) {
       var gid = 'glow-' + id + '-' + i;
-      defs += '<radialGradient id="' + gid + '">' + GLOW_STOPS.map(function (s) {
-        return '<stop offset="' + s[0] + '" stop-color="' + p.color + '"' +
-          (s[1] < 1 ? ' stop-opacity="' + s[1] + '"' : '') + '/>';
-      }).join('') + '</radialGradient>';
-      circles += '<circle cx="' + fmt(p.x * o.width) + '" cy="' + fmt(p.y * o.height) +
-        '" r="' + fmt(p.size * o.height) + '" fill="url(#' + gid + ')"/>';
+      var cx = fmt(p.x * o.width);
+      var cy = fmt(p.y * o.height);
+      var r = fmt(p.size * o.height);
+      // Střed a poloměr přechodu jsou zapsané výslovně v souřadnicích SVG. Affinity při
+      // vložení nezná výchozí hodnoty (50 % obdélníku kruhu) a vykreslí tvrdé kruhy.
+      defs += '<radialGradient id="' + gid + '" gradientUnits="userSpaceOnUse" cx="' + cx + '" cy="' + cy +
+        '" r="' + r + '">' + GLOW_STOPS.map(function (s) {
+          return '<stop offset="' + s[0] + '" stop-color="' + p.color + '" stop-opacity="' + s[1] + '"/>';
+        }).join('') + '</radialGradient>';
+      circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#' + gid + ')"/>';
     });
 
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
@@ -372,6 +389,8 @@
 
   var api = {
     DEFAULTS: DEFAULTS,
+    REF_HEIGHT: REF_HEIGHT,
+    cutWidthAt: cutWidthAt,
     DEFAULT_GLOW: DEFAULT_GLOW,
     NEW_GLOW_COLORS: NEW_GLOW_COLORS,
     MAX_GLOW_POINTS: MAX_GLOW_POINTS,
