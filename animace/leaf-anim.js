@@ -1389,7 +1389,7 @@ export function loadLeafSvg(url, opts) {
 
 // ───────────────────────────── <leaf-anim> ─────────────────────────────
 //
-// <leaf-anim src="Curve.svg" animation="loader" params='{"period":1200}' color="#004C3A"
+// <leaf-anim src="Curve.svg" animation="loader" params='{"period":1200}' color="#009355"
 //            speed="1" start="visible|load|manual"></leaf-anim>
 // Místo src lze dovnitř vložit přímo <svg>. Velikost se řídí CSS (width), výchozí 160 px.
 

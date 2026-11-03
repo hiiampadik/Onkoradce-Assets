@@ -1,8 +1,32 @@
 /*
- * Společná hlavička s logem a navigací pro všechny stránky.
- * Barvy bere ze stránky přes --card, --ink, --line a --muted (včetně tmavého
- * režimu), šířku obsahu přes --site-max.
+ * Společný základ všech stránek: barvy, rozestupy a hlavička s navigací.
+ * Stránky si z tokenů berou pozadí, šířku obsahu, okraje i mezery, aby byly
+ * na všech záložkách stejné. Tmavý režim přepisuje jen barvy (viz Animace).
  */
+:root {
+  --bg: #f4f7f5;
+  --card: #fff;
+  --ink: #1b2420;
+  --muted: #66736c;
+  --line: #dfe6e2;
+  --green: #009355;         /* hlavní barva webu (generátor i animace) */
+  --green-dark: #007a46;
+
+  --page-max: 1180px;       /* šířka obsahu i hlavičky */
+  --space-page: 24px;       /* okraj stránky vlevo a vpravo */
+  --space-section: 24px;    /* mezera mezi bloky (karty, nadpis → obsah) */
+  --space-card: 20px;       /* vnitřní okraj karty */
+  --space-stack: 16px;      /* mezera mezi prvky uvnitř karty */
+  --space-control: 8px;     /* mezera mezi tlačítky a drobnými ovládacími prvky */
+  --radius-card: 16px;
+  --radius-inner: 12px;
+}
+
+@media (max-width: 820px) {
+  :root { --space-page: 16px; }
+}
+
+/* Hlavička s logem a navigací */
 .site-header {
   background: var(--card, #fff);
   border-bottom: 1px solid var(--line, #dfe6e2);
@@ -10,9 +34,9 @@
 }
 
 .site-header-inner {
-  max-width: var(--site-max, 1100px);
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--space-page);
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
@@ -38,30 +62,46 @@
   margin-bottom: -1px; /* aktivní záložka překryje spodní linku hlavičky */
 }
 
-.site-nav a {
+.site-nav a,
+.site-nav .is-disabled {
   display: flex;
+  flex: none;
   align-items: center;
   min-height: 44px;
   padding: 0 14px;
   border-bottom: 2px solid transparent;
   color: var(--muted, #66736c);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .site-nav a:hover { color: var(--ink, #1b2420); }
 
+/* Záložka, která zatím nic neobsahuje: není odkaz, nejde ani zaostřit. */
+.site-nav .is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  user-select: none;
+}
+
 .site-nav a[aria-current="page"] {
   color: var(--ink, #1b2420);
-  border-bottom-color: #00954e;
+  border-bottom-color: var(--green);
 }
 
 .site-header a:focus-visible {
-  outline: 2px solid #00954e;
+  outline: 2px solid var(--green);
   outline-offset: -2px;
   border-radius: 6px;
 }
 
+/* Na úzkém displeji je navigace pod logem a když se čtyři záložky nevejdou, posouvá se do strany. */
 @media (max-width: 820px) {
-  .site-header-inner { padding-inline: var(--site-pad-narrow, 16px); }
-  .site-nav { margin-left: -14px; }
+  .site-nav {
+    margin-left: -14px;
+    max-width: calc(100% + 14px);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .site-nav::-webkit-scrollbar { display: none; }
 }

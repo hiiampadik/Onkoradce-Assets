@@ -1,14 +1,5 @@
-:root {
-  --green: #009355;
-  --green-dark: #007a46;
-  --ink: #1b2420;
-  --muted: #66736c;
-  --line: #dfe6e2;
-  --bg: #f4f7f5;
-  --card: #fff;
-  --radius: 14px;
-  color-scheme: light;
-}
+/* Barvy, rozestupy a poloměry rohů jsou ve společném site.css. */
+:root { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -23,9 +14,9 @@ body {
 }
 
 .top {
-  max-width: 1100px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 32px 24px 8px;
+  padding: 32px var(--space-page) 0;
 }
 
 .top h1 {
@@ -40,12 +31,12 @@ body {
 }
 
 .layout {
-  max-width: 1100px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 16px 24px 48px;
+  padding: var(--space-section) var(--space-page) 64px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 24px;
+  gap: var(--space-section);
   align-items: start;
 }
 
@@ -53,7 +44,7 @@ body {
 .panel {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
 }
 
 .stage {
@@ -62,8 +53,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 32px;
+  gap: var(--space-stack);
+  padding: 48px var(--space-card);
   /* šachovnice, aby bylo vidět, že výřezy jsou průhledné */
   background-color: #fff;
   background-image:
@@ -101,10 +92,10 @@ body {
 }
 
 .panel {
-  padding: 20px;
+  padding: var(--space-card);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-stack);
 }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -150,12 +141,12 @@ input[type="color"] {
 
 .note { margin: 0; font-size: 0.8rem; color: var(--muted); }
 
-.more { border-top: 1px solid var(--line); padding-top: 14px; }
+.more { border-top: 1px solid var(--line); padding-top: var(--space-stack); }
 .more-body {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding-top: 16px;
+  gap: var(--space-stack);
+  padding-top: var(--space-stack);
 }
 
 .more summary {
@@ -174,7 +165,7 @@ input[type="color"] {
 }
 .more[open] summary::before { transform: rotate(90deg); }
 
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-control); }
 
 .btn {
   padding: 10px 8px;
@@ -231,9 +222,8 @@ input[type="color"] {
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (max-width: 820px) {
-  .layout { grid-template-columns: 1fr; padding-inline: 16px; }
-  .top { padding-inline: 16px; }
-  .stage { min-height: 320px; padding: 20px; }
+  .layout { grid-template-columns: 1fr; }
+  .stage { min-height: 320px; padding: var(--space-card); }
 }
 
 @media (prefers-reduced-motion: reduce) {

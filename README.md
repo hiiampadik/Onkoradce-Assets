@@ -7,7 +7,7 @@ Statický web s logem a navigací se dvěma záložkami. Bez závislostí a bez 
 | Generátor tvarů | `/` ([`index.html`](index.html)) | Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Kliknutím na tvar se SVG zkopíruje do schránky, tlačítkem se stáhne jako soubor. |
 | Animace | `/animace/` ([`animace/`](animace/)) | Knihovna `<leaf-anim>` a ukázka animací lístečku, popis je v [`animace/README.md`](animace/README.md). |
 
-Logo je v [`assets/Logo.svg`](assets/Logo.svg). Hlavička a navigace jsou na obou stránkách stejné, styl je ve [`site.css`](site.css). Novou záložku přidáš tak, že vytvoříš podsložku s `index.html`, zkopíruješ do ní hlavičku a doplníš odkaz do navigace na všech stránkách.
+Logo je v [`assets/Logo.svg`](assets/Logo.svg). Hlavička a navigace jsou na obou stránkách stejné, styl je ve [`site.css`](site.css). Záložky *Barvy* a *Assety ke stažení* jsou zatím neaktivní (v navigaci jsou jako `<span class="is-disabled">`). Aktivní záložku přidáš tak, že vytvoříš podsložku s `index.html`, zkopíruješ do ní hlavičku a v navigaci na všech stránkách nahradíš `<span>` odkazem `<a>`.
 
 ## Spuštění
 

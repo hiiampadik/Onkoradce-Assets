@@ -7,13 +7,9 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../site.css">
 <style>
+  /* Barvy, rozestupy a poloměry rohů jsou ve společném ../site.css. */
   :root {
-    --bg: #f4f2ec;
-    --card: #ffffff;
-    --ink: #17231f;
-    --muted: #66706c;
-    --line: #e2dfd6;
-    --brand: #004c3a;
+    --brand: var(--green);
     --stage: #ffffff;
     color-scheme: light;
   }
@@ -33,17 +29,16 @@
     background: var(--bg);
     color: var(--ink);
   }
-  .site-header { --site-max: 1180px; --site-pad-narrow: 24px; }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+  .wrap { max-width: var(--page-max); margin: 0 auto; padding: 32px var(--space-page) 64px; }
   h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); margin: 0 0 20px; }
+  .sub { color: var(--muted); margin: 0 0 var(--space-section); }
   .sub b { color: var(--ink); font-weight: 600; }
   .sub .err { color: #c0392b; }
 
   .toolbar {
-    display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center;
-    padding: 12px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-    margin-bottom: 24px; position: sticky; top: 8px; z-index: 5;
+    display: flex; flex-wrap: wrap; gap: 12px var(--space-section); align-items: center;
+    padding: 12px var(--space-card); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-card);
+    margin-bottom: var(--space-section); position: sticky; top: 8px; z-index: 5;
   }
   .toolbar .group { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
@@ -65,31 +60,30 @@
   .status { font-size: 12px; color: var(--muted); }
 
   .files {
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
-    margin-bottom: 14px; display: grid; gap: 10px;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--space-card);
+    margin-bottom: var(--space-section); display: grid; gap: var(--space-stack);
   }
   .files .lead { font-size: 14px; color: var(--muted); margin: 0; }
   .files .lead b { color: var(--ink); }
-  .files .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+  .files .row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-control); }
   .files .row code { font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; min-width: 120px; }
   label.check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: var(--space-section); }
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px;
-    display: flex; flex-direction: column; gap: 14px; min-width: 0;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--space-card);
+    display: flex; flex-direction: column; gap: var(--space-stack); min-width: 0;
   }
   .card-head { display: flex; align-items: baseline; gap: 10px; }
   .tag { font-weight: 700; font-size: 12px; color: #fff; background: var(--brand); border-radius: 6px; padding: 2px 7px; }
-  body.dark .tag { background: #2f7d68; }
   .card h2 { font-size: 18px; margin: 0; }
   .desc { margin: 0; color: var(--muted); font-size: 14px; }
   .stage {
     background: var(--stage); border: 1px solid var(--line); border-radius: 12px;
-    display: grid; place-items: center; padding: 48px 24px; overflow: hidden;
+    display: grid; place-items: center; padding: 48px var(--space-card); overflow: hidden;
   }
   .host { width: 220px; }
-  .controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+  .controls { display: flex; flex-wrap: wrap; gap: var(--space-control) var(--space-stack); align-items: center; font-size: 13px; color: var(--muted); }
   .scrub { flex: 1; min-width: 140px; accent-color: var(--brand); }
   details { border-top: 1px solid var(--line); padding-top: 10px; }
   summary { cursor: pointer; font-size: 13px; font-weight: 600; }
@@ -105,17 +99,17 @@
   }
   .code button { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 3px 9px; }
 
-  section.usage { margin-top: 40px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  section.usage { margin-top: var(--space-section); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--space-card); }
   section.usage h2 { margin: 0 0 10px; font-size: 18px; }
   section.usage h3 { margin: 22px 0 8px; font-size: 15px; }
   section.usage p, section.usage li { color: var(--muted); }
   section.usage code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
   .drop {
-    position: fixed; inset: 0; background: rgba(0, 76, 58, 0.85); color: #fff; display: none;
+    position: fixed; inset: 0; background: rgba(0, 147, 85, 0.85); color: #fff; display: none;
     place-items: center; font-size: 22px; font-weight: 600; z-index: 10;
   }
   body.dragging .drop { display: grid; }
-  .banner { background: #fff3cd; color: #5c4400; border: 1px solid #f0d78c; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; }
+  .banner { background: #fff3cd; color: #5c4400; border: 1px solid #f0d78c; border-radius: var(--radius-card); padding: 12px var(--space-card); margin-bottom: var(--space-section); }
   .banner code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; }
 </style>
 </head>
@@ -126,6 +120,8 @@
     <nav class="site-nav" aria-label="Hlavní navigace">
       <a href="../">Generátor tvarů</a>
       <a href="./" aria-current="page">Animace</a>
+      <span class="is-disabled" aria-disabled="true" title="Připravujeme">Barvy</span>
+      <span class="is-disabled" aria-disabled="true" title="Připravujeme">Assety ke stažení</span>
     </nav>
   </div>
 </header>
@@ -161,7 +157,7 @@
         <button data-v="light" class="on">Světlé</button><button data-v="dark">Tmavé</button>
       </div>
     </div>
-    <div class="group">Barva <input type="color" id="color" value="#004c3a"></div>
+    <div class="group">Barva <input type="color" id="color" value="#009355"></div>
     <label class="group check"><input type="checkbox" id="debug"> Ukázat rozřezání</label>
     <label class="file">Vyzkoušet jiné SVG… <input type="file" id="file" accept=".svg,image/svg+xml"></label>
     <div class="group" title="Velikost a plynulost exportovaných snímků (tlačítko Export u každé animace)">Export
@@ -242,7 +238,7 @@ const SCHEMA = {
     ['seed', 'Náhoda (jiné číslo = jiné posuny)', 1, 99, 1, '']],
 };
 
-const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#004c3a' };
+const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#009355' };
 const cards = [];
 const $ = (sel, root = document) => root.querySelector(sel);
 

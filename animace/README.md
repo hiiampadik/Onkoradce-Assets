@@ -2,7 +2,7 @@
 
 | Soubor | K čemu je |
 |---|---|
-| `Curve.svg` | zdrojový tvar (beze změny, tak jak přišel z Affinity) |
+| `Curve.svg` | zdrojový tvar z Affinity, jen s výplní přebarvenou na zelenou webu (`#009355`) |
 | `leaf-anim.js` | knihovna + webová komponenta `<leaf-anim>`, bez závislostí |
 | `index.html` | ukázka všech animací, posuvníky parametrů, export snímků, kontrola nového SVG; nahoře jdou oba soubory pro web stáhnout nebo zkopírovat |
 
