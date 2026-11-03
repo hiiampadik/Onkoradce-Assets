@@ -15,7 +15,7 @@ python3 -m http.server 8765
 ## Testy geometrie
 
 ```bash
-node --test test/
+node --test
 ```
 
 ## Nasazení na GitHub Pages
