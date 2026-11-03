@@ -146,3 +146,89 @@ test('svg() vrací platný dokument s barvou a rozměry', () => {
   assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="444\.44" height="400" viewBox="0 0 444\.44 400">/);
   assert.match(svg, /fill="#ff0000"/);
 });
+
+/* ───────────── maska se září ───────────── */
+
+const palette = require('../palette.js');
+const paletteHexes = new Set(palette.primitives.map((c) => c.hex));
+
+function glowParts(svg) {
+  return {
+    clipPath: (svg.match(/<clipPath id="([^"]+)"><path d="([^"]+)"\/><\/clipPath>/) || []),
+    gradients: [...svg.matchAll(/<radialGradient id="([^"]+)">(.*?)<\/radialGradient>/g)],
+    circles: [...svg.matchAll(/<circle cx="([^"]+)" cy="([^"]+)" r="([^"]+)" fill="url\(#([^)]+)\)"\/>/g)]
+  };
+}
+
+test('glowSvg: obrys tvaru je ořez a každý bod je kruh s vlastním přechodem', () => {
+  const params = { height: 400 };
+  const svg = S.glowSvg(params, S.DEFAULT_GLOW);
+  const parts = glowParts(svg);
+  assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="444\.44" height="400" viewBox="0 0 444\.44 400">/);
+  assert.equal(parts.clipPath[2], S.pathData(S.outline(params)), 'ořez má stejný obrys jako plný tvar');
+  assert.ok(svg.includes(`clip-path="url(#${parts.clipPath[1]})"`));
+  assert.equal(parts.circles.length, S.DEFAULT_GLOW.length);
+  assert.equal(parts.gradients.length, S.DEFAULT_GLOW.length);
+  assert.ok(!/NaN|undefined/.test(svg));
+});
+
+test('glowSvg: id jsou jedinečná a každý kruh odkazuje na existující přechod', () => {
+  const svg = S.glowSvg({}, S.DEFAULT_GLOW);
+  const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(new Set(ids).size, ids.length);
+  const { circles } = glowParts(svg);
+  for (const c of circles) assert.ok(ids.includes(c[4]), c[4]);
+});
+
+test('glowSvg: jiný obsah dostane jiná id (víc SVG na jedné stránce se nepřebije)', () => {
+  const a = S.glowSvg({}, S.DEFAULT_GLOW);
+  const b = S.glowSvg({}, S.DEFAULT_GLOW.map((p, i) => (i ? p : { ...p, x: p.x + 0.1 })));
+  assert.notEqual(glowParts(a).clipPath[1], glowParts(b).clipPath[1]);
+  assert.equal(glowParts(a).clipPath[1], glowParts(S.glowSvg({}, S.DEFAULT_GLOW)).clipPath[1]);
+});
+
+test('glowSvg: poloha a velikost se počítají z rozměrů tvaru, takže se škálují s výškou', () => {
+  const pt = [{ x: 0.5, y: 0.25, color: '#ffffff', size: 0.5 }];
+  for (const height of [200, 400, 800]) {
+    const o = S.outline({ height });
+    const [c] = glowParts(S.glowSvg({ height }, pt)).circles;
+    assert.ok(Math.abs(+c[1] - o.width / 2) < 0.01);
+    assert.ok(Math.abs(+c[2] - height / 4) < 0.01);
+    assert.ok(Math.abs(+c[3] - height / 2) < 0.01);
+  }
+});
+
+test('normalizeGlow: ořízne polohu a velikost, opraví barvu a omezí počet bodů', () => {
+  const [p] = S.normalizeGlow([{ x: -3, y: 9, color: 'abc', size: 99 }]);
+  assert.deepEqual(p, { x: 0, y: 1, color: '#FFFFFF', size: S.GLOW_SIZE.max });
+  assert.equal(S.normalizeGlow([{ x: 0.5, y: 0.5, color: '#a5e5b2', size: 0.001 }])[0].color, '#A5E5B2');
+  assert.equal(S.normalizeGlow([{ x: 0.5, y: 0.5, color: '#a5e5b2', size: 0.001 }])[0].size, S.GLOW_SIZE.min);
+  const many = Array.from({ length: S.MAX_GLOW_POINTS + 5 }, () => ({ x: 0.5, y: 0.5, color: '#fff', size: 0.5 }));
+  assert.equal(S.normalizeGlow(many).length, S.MAX_GLOW_POINTS);
+});
+
+test('glowSvg: přechod ubývá od plné barvy do průhledna, přesně do poloměru', () => {
+  const [g] = glowParts(S.glowSvg({}, [{ x: 0.5, y: 0.5, color: '#ADF0C1', size: 0.5 }])).gradients;
+  const stops = [...g[2].matchAll(/<stop offset="([^"]+)" stop-color="([^"]+)"(?: stop-opacity="([^"]+)")?\/>/g)]
+    .map((m) => ({ offset: +m[1], color: m[2], opacity: m[3] === undefined ? 1 : +m[3] }));
+  assert.equal(stops[0].offset, 0);
+  assert.equal(stops[0].opacity, 1);
+  assert.equal(stops[stops.length - 1].offset, 1);
+  assert.equal(stops[stops.length - 1].opacity, 0);
+  for (let i = 1; i < stops.length; i++) assert.ok(stops[i].opacity <= stops[i - 1].opacity);
+  assert.ok(stops.every((s) => s.color === '#ADF0C1'));
+});
+
+test('všechny výchozí barvy jsou ve vzorníku (paleta Primitives)', () => {
+  assert.ok(paletteHexes.has(S.DEFAULTS.color), 'barva jednobarevného tvaru');
+  for (const p of S.DEFAULT_GLOW) assert.ok(paletteHexes.has(p.color), 'výchozí bod ' + p.color);
+  for (const c of S.NEW_GLOW_COLORS) assert.ok(paletteHexes.has(c), 'barva nového bodu ' + c);
+});
+
+test('výchozí body leží uvnitř tvaru a je jich v rozsahu povoleného počtu', () => {
+  assert.ok(S.DEFAULT_GLOW.length >= 1 && S.DEFAULT_GLOW.length <= S.MAX_GLOW_POINTS);
+  for (const p of S.DEFAULT_GLOW) {
+    assert.ok(p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1);
+    assert.ok(p.size >= S.GLOW_SIZE.min && p.size <= S.GLOW_SIZE.max);
+  }
+});

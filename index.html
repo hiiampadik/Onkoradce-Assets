@@ -15,12 +15,24 @@
 
   <header class="top">
     <h1>Generátor tvarů</h1>
-    <p class="lead">Tvar se šesti výřezy v poměru 10&nbsp;:&nbsp;9. Klikni na něj a SVG se zkopíruje.</p>
+    <p class="lead" data-only="solid">Tvar se šesti výřezy v poměru 10&nbsp;:&nbsp;9. Klikni na něj a SVG se zkopíruje.</p>
+    <p class="lead" data-only="glow" hidden>Tvar je jen maska, kterou prosvítá záře z bodů. Body přetahuj myší, dvojklikem do tvaru přidáš další.</p>
+
+    <div class="modes" role="group" aria-label="Druh tvaru">
+      <button type="button" class="mode" data-mode="solid" aria-pressed="true">Jednobarevný</button>
+      <button type="button" class="mode" data-mode="glow" aria-pressed="false">Maska se září</button>
+    </div>
   </header>
 
   <main class="layout">
     <section class="stage" aria-label="Náhled tvaru">
-      <button type="button" id="shape" class="shape" title="Zkopírovat SVG do schránky" aria-label="Zkopírovat SVG do schránky"></button>
+      <button type="button" id="shape" class="shape" data-only="solid" title="Zkopírovat SVG do schránky" aria-label="Zkopírovat SVG do schránky"></button>
+
+      <div id="glow" class="glow" data-only="glow" hidden>
+        <div id="glow-art" class="glow-art"></div>
+        <div id="glow-handles" class="glow-handles"></div>
+      </div>
+
       <p class="dims" id="dims"></p>
     </section>
 
@@ -41,10 +53,32 @@
         <input id="size" type="range" min="100" max="1000" step="10">
       </div>
 
-      <div class="field field-inline">
-        <label for="color">Barva</label>
-        <input id="color" type="color">
-        <output id="color-out" for="color"></output>
+      <div class="field field-inline" data-only="solid">
+        <span class="field-title">Barva</span>
+        <swatch-picker id="color" label="Barva"></swatch-picker>
+      </div>
+
+      <div class="field" data-only="glow" hidden>
+        <div class="field-head">
+          <span class="field-title">Body záře</span>
+          <button type="button" id="glow-add" class="btn small">+ Přidat bod</button>
+        </div>
+        <div class="chips" id="glow-chips" role="group" aria-label="Body záře"></div>
+
+        <div class="glow-selected">
+          <div class="field field-inline">
+            <span class="field-title">Barva</span>
+            <swatch-picker id="glow-color" label="Barva bodu"></swatch-picker>
+          </div>
+          <div class="field">
+            <div class="field-head">
+              <label for="glow-size">Velikost záře</label>
+              <output id="glow-size-out" for="glow-size"></output>
+            </div>
+            <input id="glow-size" type="range" min="10" max="150" step="1">
+          </div>
+          <button type="button" id="glow-remove" class="btn small">Odebrat bod</button>
+        </div>
       </div>
 
       <details class="more">
@@ -89,6 +123,10 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- swatches.js musí být před app.js, aby byl <swatch-picker> hotový dřív, než se do něj zapíše hodnota -->
+  <script src="brand.js"></script>
+  <script src="palette.js"></script>
+  <script src="swatches.js"></script>
   <script src="shape.js"></script>
   <script src="app.js"></script>
 </body>

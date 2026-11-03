@@ -25,7 +25,7 @@
     cutWidth: 9,      // px; absolutní, nezávisí na velikosti tvaru
     radius: 0.05,     // X jako podíl výšky
     offset: 0.075,    // posun vodorovných výřezů od středu jako podíl výšky
-    color: '#009355'
+    color: '#149B58'  // green/500 z palety, aby šla barva vybrat ve vzorníku
   };
 
   function clamp(v, lo, hi) {
@@ -290,13 +290,99 @@
       '<path fill="' + o.params.color + '" d="' + pathData(o) + '"/></svg>';
   }
 
+  /*
+   * Varianta „maska se září“: tvar nemá vlastní barvu, je to jen okno, kterým
+   * prosvítá záře z bodů. Každý bod je kruh s radiálním přechodem (barva se
+   * k okraji vytrácí do průhledna) a celek je ořezaný obrysem tvaru.
+   *
+   * Bod: x, y = poloha jako podíl šířky a výšky tvaru (0–1),
+   *      size = poloměr záře jako podíl výšky, color = HEX.
+   */
+  var MAX_GLOW_POINTS = 12;
+  var GLOW_SIZE = { min: 0.1, max: 1.5 };
+
+  // Přechod jako [offset, průhlednost]. Blíží se Gaussovce, takže záře nemá viditelný okraj.
+  var GLOW_STOPS = [[0, 1], [0.3, 1], [0.55, 0.78], [0.8, 0.28], [1, 0]];
+
+  // Barvy jsou z palety (primitives), aby šly vybrat ve vzorníku. Později uvedený bod
+  // se kreslí přes dřívější: zelená tvoří podklad, žlutá a modrá ji přebarvují a bílá zesvětluje.
+  var DEFAULT_GLOW = [
+    { x: 0.24, y: 0.78, color: '#ADF0C1', size: 1.1 },
+    { x: 0.86, y: 0.17, color: '#F1ED6F', size: 0.75 },
+    { x: 0.78, y: 0.92, color: '#D4EBF1', size: 0.65 },
+    { x: 0.03, y: 0.3, color: '#FFFFFF', size: 0.42 }
+  ];
+
+  // Barvy, které dostávají nově přidané body (střídají se).
+  var NEW_GLOW_COLORS = ['#ADF0C1', '#F9F7B4', '#D4EBF1', '#FFFFFF', '#FDCE9A', '#ACD9E2'];
+
+  function glowColor(c) {
+    var s = String(c).trim();
+    if (/^#[0-9a-f]{6}$/i.test(s)) return s.toUpperCase();
+    if (/^#[0-9a-f]{3}$/i.test(s)) return ('#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3]).toUpperCase();
+    return '#FFFFFF';
+  }
+
+  function normalizeGlow(points) {
+    return (points || []).slice(0, MAX_GLOW_POINTS).map(function (p) {
+      return {
+        x: clamp(+p.x || 0, 0, 1),
+        y: clamp(+p.y || 0, 0, 1),
+        color: glowColor(p.color),
+        size: clamp(+p.size || GLOW_SIZE.min, GLOW_SIZE.min, GLOW_SIZE.max)
+      };
+    });
+  }
+
+  // Krátký otisk obsahu: id v SVG se tak neshodují, když jich je na stránce víc.
+  function hash(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0).toString(36);
+  }
+
+  function glowSvg(input, points) {
+    var o = outline(input);
+    var pts = normalizeGlow(points);
+    var d = pathData(o);
+    var id = hash(d + JSON.stringify(pts));
+    var w = fmt(o.width);
+    var h = fmt(o.height);
+
+    var defs = '<clipPath id="shape-' + id + '"><path d="' + d + '"/></clipPath>';
+    var circles = '';
+    pts.forEach(function (p, i) {
+      var gid = 'glow-' + id + '-' + i;
+      defs += '<radialGradient id="' + gid + '">' + GLOW_STOPS.map(function (s) {
+        return '<stop offset="' + s[0] + '" stop-color="' + p.color + '"' +
+          (s[1] < 1 ? ' stop-opacity="' + s[1] + '"' : '') + '/>';
+      }).join('') + '</radialGradient>';
+      circles += '<circle cx="' + fmt(p.x * o.width) + '" cy="' + fmt(p.y * o.height) +
+        '" r="' + fmt(p.size * o.height) + '" fill="url(#' + gid + ')"/>';
+    });
+
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
+      '" viewBox="0 0 ' + w + ' ' + h + '">' +
+      '<defs>' + defs + '</defs>' +
+      '<g clip-path="url(#shape-' + id + ')">' + circles + '</g></svg>';
+  }
+
   var api = {
     DEFAULTS: DEFAULTS,
+    DEFAULT_GLOW: DEFAULT_GLOW,
+    NEW_GLOW_COLORS: NEW_GLOW_COLORS,
+    MAX_GLOW_POINTS: MAX_GLOW_POINTS,
+    GLOW_SIZE: GLOW_SIZE,
     normalize: normalize,
+    normalizeGlow: normalizeGlow,
     maxDepth: maxDepth,
     outline: outline,
     pathData: pathData,
-    svg: svg
+    svg: svg,
+    glowSvg: glowSvg
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

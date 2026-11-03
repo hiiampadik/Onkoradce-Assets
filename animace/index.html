@@ -7,6 +7,9 @@
 <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 <link rel="stylesheet" href="../site.css">
 <script src="../site.js"></script>
+<script src="../brand.js"></script>
+<script src="../palette.js"></script>
+<script src="../swatches.js"></script>
 <style>
   /* Barvy, rozestupy a poloměry rohů jsou ve společném ../site.css. */
   :root {
@@ -52,7 +55,6 @@
   }
   button:hover, .file:hover { border-color: var(--muted); }
   .file input { display: none; }
-  input[type=color] { width: 32px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
   .toolbar input[type=number], .toolbar select {
     font: inherit; font-size: 13px; color: var(--ink); background: var(--card);
     border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px;
@@ -148,7 +150,7 @@
         <button data-v="light" class="on">Světlé</button><button data-v="dark">Tmavé</button>
       </div>
     </div>
-    <div class="group">Barva <input type="color" id="color" value="#009355"></div>
+    <div class="group">Barva <swatch-picker id="color" value="#149B58" label="Barva"></swatch-picker></div>
     <label class="group check"><input type="checkbox" id="debug"> Ukázat rozřezání</label>
     <label class="file">Vyzkoušet jiné SVG… <input type="file" id="file" accept=".svg,image/svg+xml"></label>
     <div class="group" title="Velikost a plynulost exportovaných snímků (tlačítko Export u každé animace)">Export
@@ -229,7 +231,7 @@ const SCHEMA = {
     ['seed', 'Náhoda (jiné číslo = jiné posuny)', 1, 99, 1, '']],
 };
 
-const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#009355' };
+const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#149B58' };
 const cards = [];
 const $ = (sel, root = document) => root.querySelector(sel);
 

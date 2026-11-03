@@ -35,7 +35,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir _site
-          cp -r index.html style.css site.css site.js brand.js palette.js shape.js app.js favicon.svg assets animace barvy assety _site/
+          cp -r index.html style.css site.css site.js brand.js palette.js swatches.js shape.js app.js favicon.svg assets animace barvy assety _site/
       # GitHub Pages posílá soubory s max-age=600. Bez razítka by si návštěvník po
       # nasazení mohl načíst nové HTML se starým CSS, proto se k lokálním souborům
       # v HTML přidá ?v=<zkrácený SHA commitu>. Zdrojové soubory zůstávají čisté.
@@ -43,7 +43,7 @@ jobs:
         run: |
           v="${GITHUB_SHA::7}"
           pages="_site/index.html _site/animace/index.html _site/barvy/index.html _site/assety/index.html"
-          sed -i -E "s#((href|src)=\"(\.\./)?(site\.css|style\.css|site\.js|brand\.js|palette\.js|shape\.js|app\.js|barvy\.css|barvy\.js|assety\.css|assety\.js|favicon\.svg|assets/Logo\.svg))\"#\1?v=${v}\"#g" $pages
+          sed -i -E "s#((href|src)=\"(\.\./)?(site\.css|style\.css|site\.js|brand\.js|palette\.js|swatches\.js|shape\.js|app\.js|barvy\.css|barvy\.js|assety\.css|assety\.js|favicon\.svg|assets/Logo\.svg))\"#\1?v=${v}\"#g" $pages
           for f in $pages; do grep -q "site.css?v=${v}" "$f"; grep -q "site.js?v=${v}" "$f"; done
           grep -c "?v=${v}" $pages
       - uses: actions/configure-pages@v5

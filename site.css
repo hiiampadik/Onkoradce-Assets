@@ -105,6 +105,101 @@ body {
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* Výběr barvy ze vzorníku (<swatch-picker> ze swatches.js).
+   Selektory mají dvě třídy, aby přebily obecná pravidla pro button na stránkách. */
+.swatch-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.swatch-picker .swatch-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.swatch-picker .swatch-trigger:hover { border-color: var(--muted); }
+
+.swatch-picker .swatch-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+.swatch-picker .swatch-caret {
+  width: 6px;
+  height: 6px;
+  margin: 0 2px 3px;
+  border: solid var(--muted);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.swatch-picker .swatch-pop {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 304px;
+  max-width: calc(100vw - 16px);
+  max-height: min(70vh, 460px);
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgba(16, 24, 20, 0.18);
+}
+.swatch-picker .swatch-pop[hidden] { display: none; }
+
+.swatch-picker .swatch-group-name {
+  margin: 0 0 6px;
+  font: 600 11px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.swatch-picker .swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 24px);
+  gap: 6px;
+}
+
+.swatch-picker .swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+}
+.swatch-picker .swatch:hover { transform: scale(1.12); }
+.swatch-picker .swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--ink);
+}
+
+.swatch-picker :focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
 /* Hlavička s logem a navigací (vykresluje ji <site-header> ze site.js) */
 site-header { display: block; }
 
