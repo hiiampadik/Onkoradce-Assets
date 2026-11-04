@@ -17,7 +17,13 @@
     <h1>Barvy</h1>
     <p class="page-lead">Klikni na vzorek nebo na hodnotu a zkopíruje se do schránky.</p>
 
-    <div class="color-sections" id="sections"></div>
+    <div class="subtabs" role="group" aria-label="Druh barev">
+      <button type="button" class="subtab" data-tab="rgb" aria-pressed="true">RGB</button>
+      <button type="button" class="subtab" data-tab="tisk" aria-pressed="false">CMYK + Pantone</button>
+    </div>
+
+    <div class="color-sections" id="sections-rgb" data-tab-panel="rgb"></div>
+    <div class="color-sections" id="sections-tisk" data-tab-panel="tisk" hidden></div>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

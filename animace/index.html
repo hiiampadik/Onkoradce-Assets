@@ -150,7 +150,7 @@
         <button data-v="light" class="on">Světlé</button><button data-v="dark">Tmavé</button>
       </div>
     </div>
-    <div class="group">Barva <swatch-picker id="color" value="#149B58" label="Barva"></swatch-picker></div>
+    <div class="group">Barva <swatch-picker id="color" value="#00A86B" label="Barva"></swatch-picker></div>
     <label class="group check"><input type="checkbox" id="debug"> Ukázat rozřezání</label>
     <label class="file">Vyzkoušet jiné SVG… <input type="file" id="file" accept=".svg,image/svg+xml"></label>
     <div class="group" title="Velikost a plynulost exportovaných snímků (tlačítko Export u každé animace)">Export
@@ -231,7 +231,7 @@ const SCHEMA = {
     ['seed', 'Náhoda (jiné číslo = jiné posuny)', 1, 99, 1, '']],
 };
 
-const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#149B58' };
+const state = { geometry: null, source: 'Curve.svg', speed: 1, debug: false, color: '#00A86B' };
 const cards = [];
 const $ = (sel, root = document) => root.querySelector(sel);
 

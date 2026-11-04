@@ -9,7 +9,7 @@ const palette = require('../palette.js');
 const groups = Swatches.groups(Brand.COLORS, palette.primitives);
 
 test('vzorník: nejdřív logo, pak rodiny z palety v pořadí souboru', () => {
-  assert.deepEqual(groups.map((g) => g.name), ['Logo', 'green', 'blue', 'grey', 'beige', 'yellow', 'orange', 'neutral']);
+  assert.deepEqual(groups.map((g) => g.name), ['Logo', 'green', 'grey', 'beige', 'neutral', 'orange', 'yellow', 'blue']);
   assert.deepEqual(groups[0].colors.map((c) => c.hex), Brand.COLORS);
 });
 
@@ -21,10 +21,11 @@ test('vzorník obsahuje každou barvu loga i každé primitivum', () => {
 });
 
 test('nameOf: názvy z palety, u barev loga a cizích barev prázdný název', () => {
-  assert.equal(Swatches.nameOf('#149B58', groups), 'green/500');
-  assert.equal(Swatches.nameOf('#149b58', groups), 'green/500', 'nezáleží na velikosti písmen');
+  assert.equal(Swatches.nameOf('#00A86B', groups), 'green/500');
+  assert.equal(Swatches.nameOf('#00a86b', groups), 'green/500', 'nezáleží na velikosti písmen');
   assert.equal(Swatches.nameOf('#FFFFFF', groups), 'neutral/0', 'bílá je v logu i v paletě, přednost má název z palety');
-  assert.equal(Swatches.nameOf('#004B32', groups), '');
+  assert.equal(Swatches.nameOf('#004B32', groups), 'green/800', 'tmavá zelená loga je i v paletě');
+  assert.equal(Swatches.nameOf('#000000', groups), '');
   assert.equal(Swatches.nameOf('#123456', groups), '');
 });
 

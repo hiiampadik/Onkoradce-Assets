@@ -33,7 +33,7 @@
     cutWidth: 23,     // px při výšce REF_HEIGHT; při jiné výšce se přepočte (cutWidthAt)
     radius: 0.05,     // X jako podíl výšky
     offset: 0.075,    // posun vodorovných výřezů od středu jako podíl výšky
-    color: '#149B58'  // green/500 z palety, aby šla barva vybrat ve vzorníku
+    color: '#00A86B'  // green/500 z palety, aby šla barva vybrat ve vzorníku
   };
 
   function clamp(v, lo, hi) {
@@ -366,14 +366,14 @@
   // Barvy jsou z palety (primitives), aby šly vybrat ve vzorníku. Později uvedený bod
   // se kreslí přes dřívější: zelená tvoří podklad, žlutá a modrá ji přebarvují a bílá zesvětluje.
   var DEFAULT_GLOW = [
-    { x: 0.24, y: 0.78, color: '#ADF0C1', size: 1.1 },
-    { x: 0.86, y: 0.17, color: '#F1ED6F', size: 0.75 },
-    { x: 0.78, y: 0.92, color: '#D4EBF1', size: 0.65 },
+    { x: 0.24, y: 0.78, color: '#B9F1CC', size: 1.1 },
+    { x: 0.86, y: 0.17, color: '#F4EE82', size: 0.75 },
+    { x: 0.78, y: 0.92, color: '#C4F2FF', size: 0.65 },
     { x: 0.03, y: 0.3, color: '#FFFFFF', size: 0.42 }
   ];
 
   // Barvy, které dostávají nově přidané body (střídají se).
-  var NEW_GLOW_COLORS = ['#ADF0C1', '#F9F7B4', '#D4EBF1', '#FFFFFF', '#FDCE9A', '#ACD9E2'];
+  var NEW_GLOW_COLORS = ['#B9F1CC', '#FAF7C1', '#C4F2FF', '#FFFFFF', '#FFEDD5', '#91E7AD'];
 
   function glowColor(c) {
     var s = String(c).trim();

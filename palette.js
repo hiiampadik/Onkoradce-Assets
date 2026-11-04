@@ -1,100 +1,83 @@
 /*
- * Barvy z palet „Onkoradce RGB Color Primitives.clr“ a „Onkoradce RGB Color Semantics.clr“.
- * Generováno: node scripts/build-palette.js. Needituj ručně, změň .clr a spusť skript znovu.
+ * Barvy webu podle Figmy (soubor „Onkorádce – Koncept“, vzorník „Variables /
+ * Color Swatches“ 132:1503, stav po auditu barev z 3. 11. 2026): 34 Primitives
+ * a 25 Semantics. Pořadí, skupiny a jejich názvy jsou jako ve vzorníku.
+ *
+ * Píše se ručně: po změně proměnných ve Figmě uprav hodnoty tady.
+ * Ve Figmě mají blue/100 a gradient/blue výplň #C4F2FF, ale popisek #DCEFF4.
+ * Tady je hodnota proměnné (#C4F2FF).
+ *
+ * primitiveGroups a semanticGroups jsou skupiny pro stránku Barvy, primitives
+ * a semantics totéž jako plochý seznam { name, hex } (u sémantických barev
+ * i primitive = primitivum se stejnou hodnotou).
  */
 (function (root) {
   'use strict';
 
-  var palette = {
-    primitives: [
-      {"name":"green/50","hex":"#CAF8D7"},
-      {"name":"green/100","hex":"#ADF0C1"},
-      {"name":"green/200","hex":"#82E59D"},
-      {"name":"green/300","hex":"#4FD675"},
-      {"name":"green/400","hex":"#2DC96A"},
-      {"name":"green/500","hex":"#149B58"},
-      {"name":"green/600","hex":"#0B5230"},
-      {"name":"green/700","hex":"#09472A"},
-      {"name":"green/800","hex":"#083C26"},
-      {"name":"green/900","hex":"#053120"},
-      {"name":"blue/100","hex":"#D4EBF1"},
-      {"name":"blue/200","hex":"#ACD9E2"},
-      {"name":"blue/300","hex":"#7CC1D0"},
-      {"name":"blue/400","hex":"#45A0B4"},
-      {"name":"blue/500","hex":"#176C84"},
-      {"name":"blue/600","hex":"#073D50"},
-      {"name":"blue/700","hex":"#063445"},
-      {"name":"blue/800","hex":"#042C3A"},
-      {"name":"blue/900","hex":"#03232F"},
-      {"name":"grey/50","hex":"#F5F5F5"},
-      {"name":"grey/100","hex":"#EAEAEA"},
-      {"name":"grey/200","hex":"#D9D9D9"},
-      {"name":"grey/300","hex":"#BABABA"},
-      {"name":"grey/400","hex":"#979797"},
-      {"name":"grey/500","hex":"#777777"},
-      {"name":"grey/600","hex":"#5C5C5C"},
-      {"name":"grey/700","hex":"#414141"},
-      {"name":"grey/800","hex":"#2B2B2B"},
-      {"name":"grey/900","hex":"#1B1B1B"},
-      {"name":"beige/50","hex":"#FAF9F6"},
-      {"name":"beige/100","hex":"#F2F0EB"},
-      {"name":"beige/200","hex":"#E2DCD1"},
-      {"name":"beige/300","hex":"#CFC6B7"},
-      {"name":"yellow/50","hex":"#FCFCE2"},
-      {"name":"yellow/100","hex":"#F9F7B4"},
-      {"name":"yellow/200","hex":"#F1ED6F"},
-      {"name":"yellow/300","hex":"#E3D944"},
-      {"name":"yellow/400","hex":"#CCBD24"},
-      {"name":"yellow/500","hex":"#A29115"},
-      {"name":"yellow/600","hex":"#615502"},
-      {"name":"yellow/700","hex":"#4E4401"},
-      {"name":"yellow/800","hex":"#3B3301"},
-      {"name":"yellow/900","hex":"#292500"},
-      {"name":"orange/50","hex":"#FFF5E9"},
-      {"name":"orange/100","hex":"#FFE9CB"},
-      {"name":"orange/200","hex":"#FDCE9A"},
-      {"name":"orange/300","hex":"#FBAC61"},
-      {"name":"orange/400","hex":"#F87E2F"},
-      {"name":"orange/500","hex":"#F55D14"},
-      {"name":"orange/600","hex":"#E2410E"},
-      {"name":"orange/700","hex":"#B32D0D"},
-      {"name":"orange/800","hex":"#862410"},
-      {"name":"orange/900","hex":"#67200F"},
-      {"name":"neutral/0","hex":"#FFFFFF"}
+  var groups = {
+    primitiveGroups: [
+      { group: 'Green', colors: [
+        ['green/50', '#D3F8DF'], ['green/100', '#B9F1CC'], ['green/200', '#91E7AD'],
+        ['green/300', '#5BDA88'], ['green/400', '#2ECF7D'], ['green/500', '#00A86B'],
+        ['green/600', '#00633F'], ['green/800', '#004B32'], ['green/900', '#003F2B']
+      ] },
+      { group: 'Grey', colors: [
+        ['grey/50', '#F7F7F7'], ['grey/100', '#EEEEEE'], ['grey/200', '#E0E0E0'],
+        ['grey/300', '#C6C6C6'], ['grey/500', '#8A8A8A'], ['grey/600', '#6F6F6F'],
+        ['grey/700', '#525252'], ['grey/800', '#393939'], ['grey/900', '#242424']
+      ] },
+      { group: 'Beige', colors: [
+        ['beige/50', '#FBFAF8'], ['beige/100', '#F5F3EF'], ['beige/200', '#E8E3DA'], ['beige/300', '#D8D0C4']
+      ] },
+      { group: 'Neutral', colors: [['neutral/0', '#FFFFFF']] },
+      { group: 'Orange', colors: [['orange/50', '#FFF7ED'], ['orange/100', '#FFEDD5'], ['orange/500', '#F97316']] },
+      { group: 'Yellow', colors: [
+        ['yellow/100', '#FAF7C1'], ['yellow/200', '#F4EE82'], ['yellow/300', '#E9DE55'],
+        ['yellow/600', '#756700'], ['yellow/900', '#373000']
+      ] },
+      { group: 'Blue', colors: [['blue/100', '#C4F2FF'], ['blue/600', '#004E63'], ['blue/700', '#004457']] }
     ],
-    semantics: [
-      {"name":"text/brand/strong","hex":"#053120","primitive":"green/900"},
-      {"name":"text/brand/default","hex":"#083C26","primitive":"green/800"},
-      {"name":"text/brand/accent","hex":"#0B5230","primitive":"green/600"},
-      {"name":"text/brand/highlight","hex":"#149B58","primitive":"green/500"},
-      {"name":"text/inverse/default","hex":"#FFFFFF","primitive":"neutral/0"},
-      {"name":"text/neutral/primary","hex":"#1B1B1B","primitive":"grey/900"},
-      {"name":"text/neutral/secondary","hex":"#5C5C5C","primitive":"grey/600"},
-      {"name":"text/neutral/tertiary","hex":"#777777","primitive":"grey/500"},
-      {"name":"icon/primary","hex":"#083C26","primitive":"green/800"},
-      {"name":"icon/brand","hex":"#149B58","primitive":"green/500"},
-      {"name":"icon/inverse","hex":"#FFFFFF","primitive":"neutral/0"},
-      {"name":"background/default","hex":"#FFFFFF","primitive":"neutral/0"},
-      {"name":"background/beige","hex":"#F2F0EB","primitive":"beige/100"},
-      {"name":"background/brand-subtle","hex":"#ADF0C1","primitive":"green/100"},
-      {"name":"background/brand","hex":"#149B58","primitive":"green/500"},
-      {"name":"background/brand-strong","hex":"#053120","primitive":"green/900"},
-      {"name":"surface/default","hex":"#FFFFFF","primitive":"neutral/0"},
-      {"name":"surface/subtle","hex":"#CAF8D7","primitive":"green/50"},
-      {"name":"border/subtle","hex":"#ADF0C1","primitive":"green/100"},
-      {"name":"border/brand","hex":"#149B58","primitive":"green/500"},
-      {"name":"action/primary","hex":"#0B5230","primitive":"green/600"},
-      {"name":"action/primary-hover","hex":"#083C26","primitive":"green/800"},
-      {"name":"action/primary-pressed","hex":"#053120","primitive":"green/900"},
-      {"name":"action/secondary","hex":"#2B2B2B","primitive":"grey/800"},
-      {"name":"action/secondary-hover","hex":"#1B1B1B","primitive":"grey/900"},
-      {"name":"action/secondary-small","hex":"#414141","primitive":"grey/700"},
-      {"name":"action/secondary-small-hover","hex":"#2B2B2B","primitive":"grey/800"},
-      {"name":"gradient/yellow","hex":"#F1ED6F","primitive":"yellow/200"},
-      {"name":"gradient/blue","hex":"#D4EBF1","primitive":"blue/100"},
-      {"name":"gradient/green-light","hex":"#82E59D","primitive":"green/200"},
-      {"name":"gradient/green","hex":"#149B58","primitive":"green/500"}
+    semanticGroups: [
+      { category: 'Text', group: 'Neutral', colors: [
+        ['text/neutral/primary', '#242424'], ['text/neutral/secondary', '#6F6F6F'], ['text/neutral/tertiary', '#8A8A8A']
+      ] },
+      { category: 'Text', group: 'Brand', colors: [
+        ['text/brand/strong', '#003F2B'], ['text/brand/default', '#004B32'],
+        ['text/brand/accent', '#00633F'], ['text/brand/highlight', '#00A86B']
+      ] },
+      { category: 'Text', group: 'Inverse', colors: [['text/inverse/default', '#FFFFFF']] },
+      { group: 'Ikony', colors: [['icon/primary', '#004B32'], ['icon/brand', '#00A86B'], ['icon/inverse', '#FFFFFF']] },
+      { group: 'Pozadí', colors: [
+        ['background/default', '#FFFFFF'], ['background/beige', '#F5F3EF'],
+        ['background/brand-subtle', '#B9F1CC'], ['background/brand', '#00A86B']
+      ] },
+      { group: 'Ohraničení', colors: [['border/subtle', '#B9F1CC']] },
+      { group: 'Akce', colors: [
+        ['action/primary', '#00633F'], ['action/primary-hover', '#004B32'],
+        ['action/secondary', '#393939'], ['action/secondary-hover', '#242424'],
+        ['action/secondary-small', '#525252'], ['action/secondary-small-hover', '#393939']
+      ] },
+      { group: 'Gradienty', colors: [['gradient/yellow', '#F4EE82'], ['gradient/blue', '#C4F2FF'], ['gradient/green-light', '#91E7AD']] }
     ]
+  };
+
+  function flat(list) {
+    return list.reduce(function (all, g) {
+      return all.concat(g.colors.map(function (c) { return { name: c[0], hex: c[1] }; }));
+    }, []);
+  }
+
+  var primitives = flat(groups.primitiveGroups);
+  var semantics = flat(groups.semanticGroups).map(function (s) {
+    var p = primitives.find(function (q) { return q.hex === s.hex; });
+    return p ? { name: s.name, hex: s.hex, primitive: p.name } : s;
+  });
+
+  var palette = {
+    primitiveGroups: groups.primitiveGroups,
+    semanticGroups: groups.semanticGroups,
+    primitives: primitives,
+    semantics: semantics
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = palette;

@@ -63,3 +63,10 @@ test('logo má přesně požadované varianty', () => {
   assert.deepEqual(asset.variants, Brand.COLORS);
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'assets', asset.file)));
 });
+
+test('tiskové barvy: zápis CMYK jako ve vzorníku, každá má náhled v HEX', () => {
+  assert.equal(Brand.PRINT_COLORS.length, 6);
+  assert.equal(Brand.cmykLabel([100, 0, 90, 0]), 'C100 M0 Y90 K0');
+  for (const c of Brand.PRINT_COLORS) assert.equal(Brand.normalizeHex(c.preview), c.preview);
+  assert.deepEqual(Brand.PRINT_COLORS.map((c) => c.pantone).filter(Boolean), ['2905', '393 U', '3405']);
+});

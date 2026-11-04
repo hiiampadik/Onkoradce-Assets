@@ -6,7 +6,7 @@ Statický web s logem a navigací se čtyřmi záložkami. Bez závislostí a be
 |---|---|---|
 | Generátor tvarů | `/` ([`index.html`](index.html)) | Webový generátor SVG tvarů se šesti výřezy v poměru 10 : 9. Má dvě varianty: **Jednobarevný** (kliknutím na tvar se SVG zkopíruje) a **Maska se září** (`/#zare`), kde je tvar jen maska a barvy do ní prosvítají z bodů. SVG se zkopíruje do schránky nebo stáhne jako soubor. Rozměry jdou přepnout mezi **px** a **mm**. |
 | Animace | `/animace/` ([`animace/`](animace/)) | Knihovna `<leaf-anim>` a ukázka animací lístečku, popis je v [`animace/README.md`](animace/README.md). |
-| Barvy | `/barvy/` ([`barvy/`](barvy/)) | Barvy loga a palety Primitives a Semantics z `.clr` souborů. Kliknutím se zkopíruje HEX nebo `rgb()`. |
+| Barvy | `/barvy/` ([`barvy/`](barvy/)) | Dva podtaby: **RGB** (barvy loga a palety Primitives a Semantics z Figmy ve stejných skupinách jako vzorník ve Figmě; kliknutím se zkopíruje HEX) a **CMYK + Pantone** (`/barvy/#tisk`, barvy pro tisk z `PRINT_COLORS` v `brand.js`, kopíruje se CMYK nebo Pantone). |
 | Assety ke stažení | `/assety/` ([`assety/`](assety/)) | Tabulka assetů: ukázka, použité barvy a tlačítka Stáhnout SVG a Kopírovat SVG. |
 
 ## Společný kód
@@ -15,22 +15,13 @@ Statický web s logem a navigací se čtyřmi záložkami. Bez závislostí a be
 - [`site.js`](site.js) – element `<site-header current="…" base="…">` s logem a navigací (jediné místo, kde jsou záložky vyjmenované) a `SiteUtil` pro kopírování, stahování a hlášky.
 - [`swatches.js`](swatches.js) – element `<swatch-picker>`: výběr barvy ze vzorníku, který nahrazuje `<input type="color">` (generátor, Animace). Nabízí barvy loga a paletu Primitives. Chová se jako input (`.value` v HEX, události `input` a `change`). Hodnota mimo vzorník (třeba výplň nahraného SVG) se zobrazí, ale nic není vybrané. Skript musí být načtený před kódem, který do prvku zapisuje hodnotu. Má testy v `test/swatches.test.js`.
 - [`brand.js`](brand.js) – barvy loga, seznam assetů a přebarvení SVG. Má testy v `test/brand.test.js`.
-- [`palette.js`](palette.js) – barvy z palet `Onkoradce RGB Color Primitives.clr` a `Onkoradce RGB Color Semantics.clr`. **Je generovaný**, needituje se ručně.
-
-## Barevné palety (.clr)
-
-Zdrojem barev jsou macOS palety v kořeni projektu. Web je za běhu nečte, používá hotový `palette.js`. Po změně palety ho vygeneruj znovu:
-
-```bash
-node scripts/build-palette.js
-```
-
-[`scripts/clr.js`](scripts/clr.js) umí číst formát `.clr` bez závislostí. Hodnoty bere jako sRGB a zaokrouhluje na 8 bitů. U sémantických barev skript dohledá primitivum se stejnou hodnotou a uloží odkaz na něj (např. `text/brand/strong` → `green/900`). Test `test/clr.test.js` hlídá, aby `palette.js` odpovídal aktuálním `.clr` souborům, proto musí být v repozitáři i ony.
+- [`palette.js`](palette.js) – barvy z Figmy (vzorník „Variables / Color Swatches“, stav po auditu barev z 3. 11. 2026): 34 Primitives a 25 Semantics. Píše se ručně, skupiny jsou jako ve Figmě. Test `test/palette.test.js` hlídá počty a to, že každá sémantická barva má hodnotu některého primitiva.
 
 ## Jak přidat asset nebo barvu
 
 - **Barva loga:** přidej HEX do `COLORS` v [`brand.js`](brand.js). Objeví se v záložce Barvy, jako další varianta loga i ve vzorníku.
-- **Barva z palety:** změň `.clr` a spusť `node scripts/build-palette.js`. Nová barva se objeví i ve vzorníku.
+- **Barva pro tisk:** přidej ji do `PRINT_COLORS` v [`brand.js`](brand.js) (`cmyk` v procentech, `preview` = HEX vzorku na obrazovce odečtený z grafického programu, volitelně `pantone`). Prostý přepočet CMYK → RGB vychází jinak než v grafickém programu, proto se náhled zadává ručně.
+- **Barva z palety:** doplň ji do `palette.js` do správné skupiny (podle Figmy). Objeví se na stránce Barvy i ve vzorníku.
 - **Výchozí barvy** (jednobarevný tvar, body záře, Animace) mají být z palety, aby šly ve vzorníku vybrat. Test `test/shape.test.js` to hlídá.
 - **Asset:** nahraj SVG do [`assets/`](assets/) a doplň ho do `ASSETS` v [`brand.js`](brand.js) (`id`, `name`, `file`, `variants`). Varianty vznikají přebarvením všech výplní, takže to funguje pro jednobarevné SVG.
 - **Záložka:** vytvoř podsložku s `index.html` (podle `barvy/index.html`) a přidej ji do `NAV` v [`site.js`](site.js). Záložka s `disabled: true` je zatím neaktivní.

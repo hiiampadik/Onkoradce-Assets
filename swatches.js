@@ -1,7 +1,7 @@
 /*
  * Výběr barvy ze vzorníku – náhrada za <input type="color">.
  *
- *   <swatch-picker id="color" value="#149B58" label="Barva"></swatch-picker>
+ *   <swatch-picker id="color" value="#00A86B" label="Barva"></swatch-picker>
  *
  * Chová se jako input: čte a nastavuje se přes .value (HEX) a při výběru vyvolá
  * události input a change. Nabízí jen barvy z webu: logo (Brand.COLORS) a paletu
