@@ -166,6 +166,13 @@ body {
 }
 .swatch-picker .swatch-pop[hidden] { display: none; }
 
+.swatch-picker .swatch-section {
+  margin: 4px 0 -4px;
+  font: 600 13px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #003f2b;
+}
+.swatch-picker .swatch-section:first-child { margin-top: 0; }
+
 .swatch-picker .swatch-group-name {
   margin: 0 0 6px;
   font: 600 11px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

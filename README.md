@@ -13,7 +13,7 @@ Statický web s logem a navigací se čtyřmi záložkami. Bez závislostí a be
 
 - [`site.css`](site.css) – barvy, rozestupy, základ stránky, tlačítka, hlavička.
 - [`site.js`](site.js) – element `<site-header current="…" base="…">` s logem a navigací (jediné místo, kde jsou záložky vyjmenované) a `SiteUtil` pro kopírování, stahování a hlášky.
-- [`swatches.js`](swatches.js) – element `<swatch-picker>`: výběr barvy ze vzorníku, který nahrazuje `<input type="color">` (generátor, Animace). Nabízí barvy loga a paletu Primitives. Chová se jako input (`.value` v HEX, události `input` a `change`). Hodnota mimo vzorník (třeba výplň nahraného SVG) se zobrazí, ale nic není vybrané. Skript musí být načtený před kódem, který do prvku zapisuje hodnotu. Má testy v `test/swatches.test.js`.
+- [`swatches.js`](swatches.js) – element `<swatch-picker>`: výběr barvy ze vzorníku, který nahrazuje `<input type="color">` (generátor, Animace). Nabízí stejný vzorník jako záložka Barvy: barvy loga a skupiny Primitives a Semantics z `palette.js`, se stejnými názvy a ve stejném pořadí. Chová se jako input (`.value` v HEX, události `input` a `change`). Hodnota mimo vzorník (třeba výplň nahraného SVG) se zobrazí, ale nic není vybrané. Skript musí být načtený před kódem, který do prvku zapisuje hodnotu. Má testy v `test/swatches.test.js`.
 - [`brand.js`](brand.js) – barvy loga, seznam assetů a přebarvení SVG. Má testy v `test/brand.test.js`.
 - [`palette.js`](palette.js) – barvy z Figmy (vzorník „Variables / Color Swatches“, stav po auditu barev z 3. 11. 2026): 34 Primitives a 25 Semantics. Píše se ručně, skupiny jsou jako ve Figmě. Test `test/palette.test.js` hlídá počty a to, že každá sémantická barva má hodnotu některého primitiva.
 

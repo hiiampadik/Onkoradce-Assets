@@ -4,8 +4,8 @@
  *   <swatch-picker id="color" value="#00A86B" label="Barva"></swatch-picker>
  *
  * Chová se jako input: čte a nastavuje se přes .value (HEX) a při výběru vyvolá
- * události input a change. Nabízí jen barvy z webu: logo (Brand.COLORS) a paletu
- * Primitives (Palette.primitives). Hodnota mimo vzorník (např. výplň nahraného
+ * události input a change. Nabízí stejný vzorník jako stránka Barvy: logo
+ * (Brand.COLORS) a skupiny Primitives a Semantics z palety (palette.js). Hodnota mimo vzorník (např. výplň nahraného
  * SVG) se zobrazí, ale ve vzorníku není nic vybrané.
  *
  * Funkce groups() a nameOf() jsou čisté, testují se v Node.
@@ -19,25 +19,30 @@
     return /^#[0-9a-f]{6}$/i.test(s) ? s.toUpperCase() : '';
   }
 
-  // Skupiny pro vzorník: logo a pak jedna skupina na rodinu barev z palety (green, blue, …).
-  function groups(brandColors, primitives) {
+  // Skupiny pro vzorník, stejné jako na stránce Barvy: logo, pak skupiny Primitives
+  // a Semantics z palety (Palette.primitiveGroups / semanticGroups, barvy jako [název, HEX]).
+  // section je nadpis kolekce, vykreslí se u první skupiny kolekce.
+  function groups(brandColors, primitiveGroups, semanticGroups) {
     var out = [];
     if (brandColors && brandColors.length) {
-      out.push({ name: 'Logo', colors: brandColors.map(function (hex) { return { hex: norm(hex), name: '' }; }) });
+      out.push({ section: 'Logo', name: '', colors: brandColors.map(function (hex) { return { hex: norm(hex), name: '' }; }) });
     }
-    var byFamily = {};
-    (primitives || []).forEach(function (c) {
-      var family = c.name.split('/')[0];
-      if (!byFamily[family]) {
-        byFamily[family] = { name: family, colors: [] };
-        out.push(byFamily[family]);
-      }
-      byFamily[family].colors.push({ hex: norm(c.hex), name: c.name });
-    });
+    function add(section, list) {
+      (list || []).forEach(function (g, i) {
+        out.push({
+          section: i === 0 ? section : '',
+          name: g.category ? g.category + ' · ' + g.group : g.group,
+          colors: g.colors.map(function (c) { return { hex: norm(c[1]), name: c[0] }; })
+        });
+      });
+    }
+    add('Primitives', primitiveGroups);
+    add('Semantics', semanticGroups);
     return out;
   }
 
   // Název barvy z palety (např. "green/500"), nebo '' když barva název nemá.
+  // Primitives jsou před Semantics, takže u stejné hodnoty vyhraje název primitiva.
   function nameOf(hex, grps) {
     var h = norm(hex);
     for (var i = 0; i < grps.length; i++) {
@@ -77,7 +82,8 @@
     connectedCallback() {
       if (this._trigger) return;
       this.classList.add('swatch-picker');
-      this._grps = groups(root.Brand && root.Brand.COLORS, root.Palette && root.Palette.primitives);
+      var palette = root.Palette || {};
+      this._grps = groups(root.Brand && root.Brand.COLORS, palette.primitiveGroups, palette.semanticGroups);
 
       this._trigger = el('button', 'swatch-trigger', { type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' });
       this._dot = el('span', 'swatch-dot', { 'aria-hidden': 'true' });
@@ -126,6 +132,11 @@
       this._pop = el('div', 'swatch-pop', { role: 'dialog', 'aria-label': 'Vzorník barev', hidden: '' });
       this._swatches = [];
       this._grps.forEach((g) => {
+        if (g.section) {
+          var heading = el('p', 'swatch-section');
+          heading.textContent = g.section;
+          this._pop.append(heading);
+        }
         var section = el('div', 'swatch-group');
         var title = el('p', 'swatch-group-name');
         title.textContent = g.name;
@@ -139,7 +150,8 @@
           this._swatches.push(b);
           grid.append(b);
         });
-        section.append(title, grid);
+        if (g.name) section.append(title);
+        section.append(grid);
         this._pop.append(section);
       });
       this._pop.addEventListener('keydown', (e) => this._onKey(e));
